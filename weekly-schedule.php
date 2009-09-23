@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.0
+Version: 1.0.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -111,6 +111,7 @@ function ws_install() {
 		$options['stylesheet'] = "stylesheet.css";
 		$options['displaydescription'] = "tooltip";
 		$options['daylist'] = "";
+		$options['timeformat'] = "24hours";
 		
 		update_option('WS_PP',$options);
 	}
@@ -136,7 +137,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			static $this_plugin;
 			if ( ! $this_plugin ) $this_plugin = plugin_basename(__FILE__);
 			if ( $file == $this_plugin ){
-				$settings_link = '<a href="plugins.php?page=weekly-schedule.php">' . __('Settings') . '</a>';
+				$settings_link = '<a href="options-general.php?page=weekly-schedule.php">' . __('Settings') . '</a>';
+				
 				array_unshift( $links, $settings_link ); // before other links
 			}
 			return $links;
@@ -192,7 +194,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$options['timedivision'] = $_POST['timedivision'];
 
 				foreach (array('starttime','endtime','tooltipwidth','tooltiptarget','tooltippoint','tooltipcolorscheme',
-						'stylesheet','displaydescription','daylist') as $option_name) {
+						'stylesheet','displaydescription','daylist', 'timeformat') as $option_name) {
 						if (isset($_POST[$option_name])) {
 							$options[$option_name] = $_POST[$option_name];
 						}
@@ -464,6 +466,24 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						}
 					?>
 					</select></td></tr>
+					<tr>
+					<td>Time Display Format</td>
+					<td><select style="width: 200px" name='timeformat'>
+					<?php $descriptions = array("24hours" => "24 Hours (e.g. 17h30)", "12hours" => "12 Hours (e.g. 1:30pm)");
+						foreach($descriptions as $key => $description)
+						{
+							if ($key == $options['timeformat'] || $options['timeformat'] == "")
+								$samedesc = "selected='selected'";
+							else
+								$samedesc = "";
+								
+							echo "<option value='" . $key . "' " . $samedesc . ">" . $description . "\n";
+						}
+					?>
+					</select></td>
+					<td></td>
+					<td></td>
+					</tr>
 					<tr>
 						<td colspan='2'>Day List (comma-separated Day IDs to specify days to be displayed and their order)
 						</td>
@@ -816,12 +836,40 @@ function ws_library() {
 	$output .= "<th class='rowheader'></th>";
 
 	for ($i = $options['starttime']; $i < $options['endtime']; $i += $options['timedivision'])	{
+
 		if (fmod($i, 1))
 			$minutes = "30";
 		else
-			$minutes = "00";
+			$minutes = "";
 
-		$output .= "<th>" .  floor($i) . "h" . $minutes . "</th>";
+		if ($options['timeformat'] == "24hours" || $options['timeformat'] == "")
+		{
+			$output .= "<th>" .  floor($i) . "h" . $minutes . "</th>";
+		}
+		else if ($options['timeformat'] == "12hours")
+		{
+			if ($i < 12)
+			{
+				$timeperiod = "am";
+				if ($i == 0)
+					$hour = 12;
+				else
+					$hour = floor($i);
+			}
+			else
+			{
+				$timeperiod = "pm";
+				if ($i == 12)
+					$hour = $i;
+				else
+					$hour = floor($i) - 12;
+			}
+			
+			$output .= "<th>" . $hour;
+			if ($minutes != "")
+				$output .= ":" . $minutes;
+			$output .=  $timeperiod . "</th>";			
+		}
 	}
 
 	$output .= "</tr>\n";
