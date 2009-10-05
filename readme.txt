@@ -25,6 +25,11 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
 
 == Changelog ==
 
+= 1.1 =
+* Adds new vertical display option
+* 24/12 hour display mode is reflected in admin interface
+* Various bug fixes
+
 = 1.0.1 =
 * Added option to choose between 24 hour and 12 hour time display
 * Fixed link to settings panel from Plugins page

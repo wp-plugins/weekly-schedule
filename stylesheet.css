@@ -10,8 +10,18 @@
 	width: 96%;
 	table-layout: fixed;
 	}
+#ws-schedule .verticalcolumn {
+	float: left;
+}
+#ws-schedule table.verticalheader {
+	width: 100px;
+}
+#ws-schedule table.vertical {
+	width: 100px;
+}
 #ws-schedule th.rowheader {
-	width: 20px;
+	width: 50px;
+	height: 50px;
 }
 #ws-schedule th {
 	background: #F5F5DC;
@@ -22,12 +32,33 @@
 	height: 30px;
 }
 #ws-schedule tr.row1 {
-	height: 70px;
+	height: 100px;
 	vertical-align: top;
 }
 #ws-schedule tr.row2 {
-	height: 35px;
+	height: 50px;
 	vertical-align: top;
+}
+#ws-schedule #3rowstall {
+	height: 90px;
+}
+#ws-schedule tr.datarow {
+	height: 70px;
+}
+#ws-schedule tr.datarow1 {
+	height: 70px;
+}
+#ws-schedule tr.datarow2 {
+	height: 142px;
+}
+#ws-schedule tr.datarow3 {
+	height: 214px;
+}
+#ws-schedule tr.vertrow {
+	width: 100px;
+}
+#ws-schedule tr.vertrow {
+	width: 100px;
 }
 #ws-schedule td:hover {
 	background: #CCCCCC;
@@ -72,4 +103,10 @@
 }
 #ws-schedule td.cat5:hover {
 	background-color: #62D99C;
+}
+#ws-schedule #continuedown {
+	border-bottom: dashed 2px #000000;
+}
+#ws-schedule #continueright {
+	border-right: dashed 2px #000000;
 }

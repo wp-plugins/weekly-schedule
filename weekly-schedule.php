@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.0.1
+Version: 1.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -74,13 +74,13 @@ function ws_install() {
 	if (!$daysresult)
 		$result = $wpdb->query("
 			INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`) VALUES
-			(1, 'S', 1),
-			(2, 'M', 1),
-			(3, 'T', 1),
-			(4, 'W', 1),
-			(5, 'T', 1),
-			(6, 'F', 1),
-			(7, 'S', 1)");
+			(1, 'Sun', 1),
+			(2, 'Mon', 1),
+			(3, 'Tue', 1),
+			(4, 'Wes', 1),
+			(5, 'Thu', 1),
+			(6, 'Fri', 1),
+			(7, 'Sat', 1)");
 			
 	$wpdb->wsitems = $wpdb->prefix.'wsitems';
 			
@@ -112,6 +112,7 @@ function ws_install() {
 		$options['displaydescription'] = "tooltip";
 		$options['daylist'] = "";
 		$options['timeformat'] = "24hours";
+		$options['layout'] = 'horizontal';
 		
 		update_option('WS_PP',$options);
 	}
@@ -194,7 +195,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$options['timedivision'] = $_POST['timedivision'];
 
 				foreach (array('starttime','endtime','tooltipwidth','tooltiptarget','tooltippoint','tooltipcolorscheme',
-						'stylesheet','displaydescription','daylist', 'timeformat') as $option_name) {
+						'stylesheet','displaydescription','daylist', 'timeformat', 'layout') as $option_name) {
 						if (isset($_POST[$option_name])) {
 							$options[$option_name] = $_POST[$option_name];
 						}
@@ -283,8 +284,13 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						
 						while ($rowsearch == 1)
 						{
-							$conflictquery = "SELECT * from " . $wpdb->prefix . "wsitems where day = " . $newitem['day'] . " and id <> " . $_POST['id'] . " and row = " . $row. " and (starttime + duration >= " . $newitem['starttime'] . " and starttime + duration <= " . ($newitem['starttime'] + $newitem['duration']) . ")";
-							
+							if ($_POST['id'] != "")
+								$checkid = " and id <> " . $_POST['id'];
+							else
+								$checkid = "";
+						
+							$conflictquery = "SELECT * from " . $wpdb->prefix . "wsitems where day = " . $newitem['day'] . $checkid .  " and row = " . $row. " and (starttime + duration >= " . $newitem['starttime'] . " or starttime + duration <= " . ($newitem['starttime'] + $newitem['duration']) . ")";
+													
 							$conflictingitems = $wpdb->get_results($conflictquery);
 							
 							if ($conflictingitems)
@@ -400,10 +406,62 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<strong>Time-related Settings</strong><br />
 					<table>
 					<tr>
+					<td>Schedule Layout</td>
+					<td><select style="width: 200px" name='layout'>
+					<?php $layouts = array("horizontal" => "Horizontal", "vertical" => "Vertical");
+						foreach($layouts as $key => $layout)
+						{
+							if ($key == $options['layout'])
+								$samedesc = "selected='selected'";
+							else
+								$samedesc = "";
+								
+							echo "<option value='" . $key . "' " . $samedesc . ">" . $layout . "\n";
+						}
+					?>
+					</select></td>
+					<td>Time Display Format</td>
+					<td><select style="width: 200px" name='timeformat'>
+					<?php $descriptions = array("24hours" => "24 Hours (e.g. 17h30)", "12hours" => "12 Hours (e.g. 1:30pm)");
+						foreach($descriptions as $key => $description)
+						{
+							if ($key == $options['timeformat'])
+								$samedesc = "selected='selected'";
+							else
+								$samedesc = "";
+								
+							echo "<option value='" . $key . "' " . $samedesc . ">" . $description . "\n";
+						}
+					?>
+					</select></td>
+					</tr>
+					<tr>
 					<td>Start Time</td>
 					<td><select style='width: 200px' name="starttime">
-					<?php for ($i = 0; $i < 24; $i+= 0.5)
+					<?php for ($i = 0; $i < 24.5; $i+= 0.5)
 						  {
+								if ($options['timeformat'] == '24hours')
+									$hour = floor($i);
+								elseif ($options['timeformat'] == '12hours')
+								{
+									if ($i < 12)
+									{
+										$timeperiod = "am";
+										if ($i == 0)
+											$hour = 12;
+										else
+											$hour = floor($i);
+									}
+									else
+									{
+										$timeperiod = "pm";
+										if ($i == 12)
+											$hour = $i;
+										else
+											$hour = floor($i) - 12;
+									}
+								}
+								
 								if (fmod($i, 1))
 									$minutes = "30";
 								else
@@ -413,15 +471,40 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									$selectedstring = "selected='selected'";
 								else
 									$selectedstring = "";
-
-								echo "<option value='" . $i . "'" . $selectedstring . ">" .  floor($i) . "h" . $minutes . "\n";
+									
+								if ($options['timeformat'] == '24 hours')
+									echo "<option value='" . $i . "'" . $selectedstring . ">" .  $hour . "h" . $minutes . "\n";
+								else
+									echo "<option value='" . $i . "'" . $selectedstring . ">" .  $hour . ":" . $minutes . $timeperiod . "\n";
 						  }
 					?>
 					</select></td>
 					<td>End Time</td>
 					<td><select style='width: 200px' name="endtime">
-					<?php for ($i = 0; $i < 24; $i+= 0.5)
+					<?php for ($i = 0; $i < 24.5; $i+= 0.5)
 						  {
+						  		if ($options['timeformat'] == '24hours')
+									$hour = floor($i);
+								elseif ($options['timeformat'] == '12hours')
+								{
+									if ($i < 12)
+									{
+										$timeperiod = "am";
+										if ($i == 0)
+											$hour = 12;
+										else
+											$hour = floor($i);
+									}
+									else
+									{
+										$timeperiod = "pm";
+										if ($i == 12)
+											$hour = $i;
+										else
+											$hour = floor($i) - 12;
+									}
+								}
+								
 								if (fmod($i, 1))
 									$minutes = "30";
 								else
@@ -432,7 +515,10 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								else
 									$selectedstring = "";
 
-								echo "<option value='" . $i . "'" . $selectedstring . ">" .  floor($i) . "h" . $minutes . "\n";
+								if ($options['timeformat'] == '24 hours')
+									echo "<option value='" . $i . "'" . $selectedstring . ">" .  $hour . "h" . $minutes . "\n";
+								else
+									echo "<option value='" . $i . "'" . $selectedstring . ">" .  $hour . ":" . $minutes . $timeperiod . "\n";
 						  }
 					?>
 					</select></td>
@@ -466,24 +552,6 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						}
 					?>
 					</select></td></tr>
-					<tr>
-					<td>Time Display Format</td>
-					<td><select style="width: 200px" name='timeformat'>
-					<?php $descriptions = array("24hours" => "24 Hours (e.g. 17h30)", "12hours" => "12 Hours (e.g. 1:30pm)");
-						foreach($descriptions as $key => $description)
-						{
-							if ($key == $options['timeformat'] || $options['timeformat'] == "")
-								$samedesc = "selected='selected'";
-							else
-								$samedesc = "";
-								
-							echo "<option value='" . $key . "' " . $samedesc . ">" . $description . "\n";
-						}
-					?>
-					</select></td>
-					<td></td>
-					<td></td>
-					</tr>
 					<tr>
 						<td colspan='2'>Day List (comma-separated Day IDs to specify days to be displayed and their order)
 						</td>
@@ -687,6 +755,28 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<td><select style='width: 400px' name="starttime">
 					<?php for ($i = $options['starttime']; $i < $options['endtime']; $i+= $options['timedivision'])
 						  {
+						  		if ($options['timeformat'] == '24hours')
+									$hour = floor($i);
+								elseif ($options['timeformat'] == '12hours')
+								{
+									if ($i < 12)
+									{
+										$timeperiod = "am";
+										if ($i == 0)
+											$hour = 12;
+										else
+											$hour = floor($i);
+									}
+									else
+									{
+										$timeperiod = "pm";
+										if ($i == 12)
+											$hour = $i;
+										else
+											$hour = floor($i) - 12;
+									}
+								}
+									
 								if (fmod($i, 1))
 									$minutes = "30";
 								else
@@ -697,7 +787,10 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								else 
 									$selectedstring = ""; 
 
-								echo "<option value='" . $i . "' " . $selectedstring . ">" .  floor($i) . "h" . $minutes . "\n";
+								if ($options['timeformat'] == '24 hours')
+									echo "<option value='" . $i . "'" . $selectedstring . ">" .  $hour . "h" . $minutes . "\n";
+								else
+									echo "<option value='" . $i . "'" . $selectedstring . ">" .  $hour . ":" . $minutes . $timeperiod . "\n";
 						  }
 					?></select></td>
 					</tr>
@@ -752,12 +845,38 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								<td style='background: #FFF;text-align:right'><?php echo $item->dayname; ?></td>
 								<td style='background: #FFF;text-align:right'>
 								<?php 
-								if (fmod($i, 1))
+								
+								if ($options['timeformat'] == '24hours')
+									$hour = floor($item->starttime);
+								elseif ($options['timeformat'] == '12hours')
+								{
+									if ($item->starttime < 12)
+									{
+										$timeperiod = "am";
+										if ($item->starttime == 0)
+											$hour = 12;
+										else
+											$hour = floor($item->starttime);
+									}
+									else
+									{
+										$timeperiod = "pm";
+										if ($item->starttime == 12)
+											$hour = $item->starttime;
+										else
+											$hour = floor($item->starttime) - 12;
+									}
+								}
+									
+								if (fmod($item->starttime, 1))
 									$minutes = "30";
 								else
 									$minutes = "00";
-								
-								echo floor($item->starttime) . "h" . $minutes; 
+																	
+								if ($options['timeformat'] == '24 hours')
+									echo $hour . "h" . $minutes . "\n";
+								else
+									echo $hour . ":" . $minutes . $timeperiod . "\n";
 								?></td>
 								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deleteitem=<?php echo $item->id; ?>' 
 								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete the item '%s'\n  'Cancel' to stop, 'OK' to delete."), $item->name )) . "') ) { return true;}return false;\""; ?>><img src='<?php echo $wspluginpath; ?>/icons/delete.png' /></a></td>
@@ -828,12 +947,25 @@ function ws_library() {
 	$output = "<!-- Weekly Schedule Output -->\n";
 
 	$output .= "<div id='ws-schedule'>\n";
-
-	$output .= "<table>\n";
-
-	$output .= "<tr class='topheader'>\n";
 	
+	if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+	{
+		$output .= "<table>\n";	
+	}
+	elseif ($options['layout'] == 'vertical')
+	{
+		$output .= "<div class='verticalcolumn'>\n";
+		$output .= "<table class='verticalheader'>\n";
+	}
+	
+	$output .= "<tr class='topheader'>";
+
 	$output .= "<th class='rowheader'></th>";
+	
+	if ($options['layout'] == 'vertical')
+	{
+		$output .= "</tr>\n";
+	}
 
 	for ($i = $options['starttime']; $i < $options['endtime']; $i += $options['timedivision'])	{
 
@@ -844,7 +976,14 @@ function ws_library() {
 
 		if ($options['timeformat'] == "24hours" || $options['timeformat'] == "")
 		{
+			if ($options['layout'] == 'vertical')
+				$output .= "<tr class='datarow'>";
+			
 			$output .= "<th>" .  floor($i) . "h" . $minutes . "</th>";
+			
+			if ($options['layout'] == 'vertical')
+				$output .= "</tr>\n";
+			
 		}
 		else if ($options['timeformat'] == "12hours")
 		{
@@ -865,14 +1004,27 @@ function ws_library() {
 					$hour = floor($i) - 12;
 			}
 			
+			if ($options['layout'] == 'vertical')
+				$output .= "<tr class='datarow'>";
+			
 			$output .= "<th>" . $hour;
 			if ($minutes != "")
 				$output .= ":" . $minutes;
 			$output .=  $timeperiod . "</th>";			
+			
+			if ($options['layout'] == 'vertical')
+				$output .= "</tr>\n";
 		}
 	}
 
-	$output .= "</tr>\n";
+	if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+		$output .= "</tr>\n";
+	elseif ($options['layout'] == 'vertical')
+	{
+		$output .= "</table>\n";
+		$output .= "</div>\n";
+	}
+
 
  	$sqldays = "SELECT * from " .  $wpdb->prefix . "wsdays";
 	
@@ -887,10 +1039,34 @@ function ws_library() {
 		{
 			$columns = $numberofcols;
 			$time = $options['starttime'];
-			$output .= "<tr class='row" . $day->rows . "'>";
+			
+			if ($options['layout'] == 'vertical')
+			{
+				$output .= "<div class='verticalcolumn'>\n";
+				$output .= "<table class='vertical'>\n";
+				$output .= "<tr class='vertrow'>";
+			}
+			elseif ($options['layout'] == 'horizontal' || $options['layout'] == '')
+			{
+				$output .= "<tr class='row" . $day->rows . "'>\n";
+			}
 
-			if ($daysrow == 1)
+			if ($daysrow == 1 && ($options['layout'] == 'horizontal' || $options['layout'] == ''))
 				$output .= "<th rowspan='" . $day->rows . "' class='rowheader'>" . $day->name . "</th>\n";
+			if ($daysrow == 1 && $options['layout'] == 'vertical' && $day->rows == 1)
+				$output .= "<th class='rowheader'>" . $day->name . "</th>\n";
+			if ($daysrow == 1 && $options['layout'] == 'vertical' && $day->rows > 1)
+				$output .= "<th class='rowheader'>&laquo; " . $day->name . "</th>\n";				
+			elseif ($daysrow != 1 && $options['layout'] == 'vertical')
+			{
+				if ($daysrow == $day->rows)
+					$output .= "<th class='rowheader'>" . $day->name . " &raquo;</th>\n";
+				else
+					$output .= "<th class='rowheader'>&laquo; " . $day->name . " &raquo;</th>\n";
+			}
+				
+			if ($options['layout'] == 'vertical')
+				$output .= "</tr>\n";
 
 			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . $wpdb->prefix . 
 						"wsitems i, " . $wpdb->prefix . "wscategories c WHERE day = " . $day->id . 			
@@ -905,28 +1081,48 @@ function ws_library() {
 				{
 					for ($i = $time; $i < $item->starttime; $i += $options['timedivision'])
 					{
-						$output .= "<td></td>";
+						if ($options['layout'] == 'vertical')
+							$output .= "<tr class='datarow'>\n";
+							
+						$output .= "<td></td>\n";
+						
+						if ($options['layout'] == 'vertical')
+							$output .= "</tr>\n";
+						
 						$columns -= 1;
 					}
-					$output .= "<td ";
 					
-					if ($options['displaydescription'] == "tooltip" && $item->description != "")
-						$output .= "tooltip='" . stripslashes($item->description) . "' ";
-						
 					$colspan = $item->duration / $options['timedivision'];
 					
 					if ($colspan > $columns)
 					{
-						$columns -= $columns;
 						$colspan = $columns;
-						$output .= "id='continueright' ";
+						$columns -= $columns;
+						
+						if ($options['layout'] == 'horizontal')
+							$continue .= "id='continueright' ";
+						elseif ($options['layout'] == 'vertical')
+							$continue .= "id='continuedown' ";
 					}
 					else
 					{					
 						$columns -= $colspan;
-					}						
+						$continue = "";
+					}	
 					
-					$output .= "colspan='" . $colspan . "' ";
+					if ($options['layout'] == 'vertical')
+							$output .= "<tr class='datarow" . $colspan . "'>";
+					
+					$output .= "<td ";
+					
+					if ($options['displaydescription'] == "tooltip" && $item->description != "")
+						$output .= "tooltip='" . stripslashes($item->description) . "' ";
+					
+					$output .= $continue;
+					
+					if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+						$output .= "colspan='" . $colspan . "' ";
+					
 					$output .= "class='cat" . $item->catid . "'>";
 					
 					if ($item->address != "")
@@ -943,23 +1139,46 @@ function ws_library() {
 					$output .= "</td>";
 					$time = $item->starttime + $item->duration;
 					
+					if ($options['layout'] == 'vertical')
+						$output .= "</tr>\n";
+					
 				}
 
 				for ($x = $columns; $x > 0; $x--)
 				{
+				
+					if ($options['layout'] == 'vertical')
+							$output .= "<tr class='datarow'>";
+					
 					$output .= "<td></td>";
 					$columns -= 1;
+					
+					if ($options['layout'] == 'vertical')
+							$output .= "</tr>";
 				}
 			}
 			else
 			{
 				for ($i = $options['starttime']; $i < $options['endtime']; $i += $options['timedivision'])
 				{
+					if ($options['layout'] == 'vertical')
+							$output .= "<tr class='datarow'>";
+							
 					$output .= "<td></td>";
+					
+					if ($options['layout'] == 'vertical')
+							$output .= "</tr>";
 				}
 			}
 
-			$output .= "</tr>";
+			if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+				$output .= "</tr>";
+			
+			if ($options['layout'] == 'vertical')
+			{
+				$output .= "</table>\n";
+				$output .= "</div>\n";
+			}
 		}
 	}
 
