@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1
+Version: 1.1.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -275,49 +275,90 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									 "duration" => $_POST['duration'],
 									 "day" => $_POST['day']);
 									 
-					
-					
-					if (isset($_POST['newitem']))
+					if (isset($_POST['updateitem']))
 					{
-						$rowsearch = 1;
-						$row = 1;
-						
-						while ($rowsearch == 1)
-						{
-							if ($_POST['id'] != "")
-								$checkid = " and id <> " . $_POST['id'];
-							else
-								$checkid = "";
-						
-							$conflictquery = "SELECT * from " . $wpdb->prefix . "wsitems where day = " . $newitem['day'] . $checkid .  " and row = " . $row. " and (starttime + duration >= " . $newitem['starttime'] . " or starttime + duration <= " . ($newitem['starttime'] + $newitem['duration']) . ")";
-													
-							$conflictingitems = $wpdb->get_results($conflictquery);
-							
-							if ($conflictingitems)
-							{
-								$row++;
-							}
-							else
-							{
-								$rowsearch = 0;
-							}
-						}
-						
-						$dayrow = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays where id = " . $_POST['day']);
-						if ($dayrow->rows < $row)
-						{
-							$dayid = array("id" => $_POST['day']);
-							$newdayrow = array("rows" => $row);
-							
-							$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
-						}
-						
-						$newitem['row'] = $row;
+						$origrow = $_POST['oldrow'];
+						$origday = $_POST['oldday'];
 					}
-					else
+
+					$rowsearch = 1;
+					$row = 1;
+					
+					while ($rowsearch == 1)
 					{
-						$newitem['row'] = $_POST['row'];
+						if ($_POST['id'] != "")
+							$checkid = " and id <> " . $_POST['id'];
+						else
+							$checkid = "";
+							
+						$endtime = $newitem['starttime'] + $newitem['duration'];
+					
+						$conflictquery = "SELECT * from " . $wpdb->prefix . "wsitems where day = " . $newitem['day'] . $checkid;
+						$conflictquery .= " and row = " . $row;
+						$conflictquery .= " and ((" . $newitem['starttime'] . " < starttime and " . $endtime . " > starttime) or";
+						$conflictquery .= "      (" . $newitem['starttime'] . " >= starttime and " . $newitem['starttime'] . " < starttime + duration))";
+						
+						echo $conflictquery;
+												
+						$conflictingitems = $wpdb->get_results($conflictquery);
+						
+						if ($conflictingitems)
+						{
+							$row++;
+						}
+						else
+						{
+							$rowsearch = 0;
+						}
 					}
+					
+					if (isset($_POST['updateitem']))
+					{
+						if ($origrow != $row || $origday != $_POST['day'])
+						{
+							echo "Change row or day";
+							if ($origrow > 1)
+							{
+								echo "Orig row was higher than 1";
+								$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $origday);
+								
+								$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $origday . " AND row = " . $origrow . "AND id != " . $_POST['id']);
+								if (!$othersonrow)
+								{
+									echo "No other item on row";
+									if ($origrow != $itemday->rows)
+									{
+										for ($i = $origrow + 1; $i <= $itemday->rows; $i++)
+										{
+											$newrow = $i - 1;
+											$changerow = array("row" => $newrow);
+											$oldrow = array("row" => $i, "day" => $origday);
+											$wpdb->update($wpdb->prefix . 'wsitems', $changerow, $oldrow);
+										}
+									}
+									
+									$dayid = array("id" => $itemday->id);
+									$newrow = $itemday->rows - 1;
+									$newdayrow = array("rows" => $newrow);
+									
+									echo "Reducing number of rows for day to " . $newrow;
+									
+									$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
+								}
+							}							
+						}
+					}
+					
+					$dayrow = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays where id = " . $_POST['day']);
+					if ($dayrow->rows < $row)
+					{
+						$dayid = array("id" => $_POST['day']);
+						$newdayrow = array("rows" => $row);
+						
+						$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
+					}
+					
+					$newitem['row'] = $row;
 						
 					if (isset($_POST['id']))
 						$id = array("id" => $_POST['id']);
@@ -343,25 +384,24 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$adminpage = 'items';
 				
 				$itemexist = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem']);
+				$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $itemexist->day);
 				
 				if ($itemexist)
 				{
 					$wpdb->query("DELETE from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem']);
 					
-					if ($itemexist->row > 1)
-					{
-						$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $itemexist->day);
-						
+					if ($itemday->rows > 1)
+					{						
 						$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $itemexist->day . " AND row = " . $itemexist->row);
 						if (!$othersonrow)
 						{
 							if ($itemexist->row != $itemday->rows)
 							{
-								for ($i = $itemexist->day + 1; $i <= $itemday->rows; $i++)
+								for ($i = $itemexist->row + 1; $i <= $itemday->rows; $i++)
 								{
 									$newrow = $i - 1;
 									$changerow = array("row" => $newrow);
-									$oldrow = array("row" => $i);
+									$oldrow = array("row" => $i, "day" => $itemday->id);
 									$wpdb->update($wpdb->prefix . 'wsitems', $changerow, $oldrow);
 								}
 							}
@@ -696,7 +736,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						wp_nonce_field('wspp-config');
 					?>
 					<input type="hidden" name="id" value="<?php if ($mode == "edit") echo $selecteditem->id; ?>" />
-					<input type="hidden" name="row" value="<?php if ($mode == "edit") echo $selecteditem->row; ?>" />
+					<input type="hidden" name="oldrow" value="<?php if ($mode == "edit") echo $selecteditem->row; ?>" />
+					<input type="hidden" name="oldday" value="<?php if ($mode == "edit") echo $selecteditem->day; ?>" />
 					<?php if ($mode == "edit"): ?>
 					<strong>Editing Item #<?php echo $selecteditem->id; ?></strong>
 					<?php endif; ?>
@@ -1084,12 +1125,13 @@ function ws_library() {
 						if ($options['layout'] == 'vertical')
 							$output .= "<tr class='datarow'>\n";
 							
-						$output .= "<td></td>\n";
+						$output .= "<td>" . $i . "</td>\n";
 						
 						if ($options['layout'] == 'vertical')
 							$output .= "</tr>\n";
 						
 						$columns -= 1;
+
 					}
 					
 					$colspan = $item->duration / $options['timedivision'];
@@ -1128,7 +1170,7 @@ function ws_library() {
 					if ($item->address != "")
 						$output .= "<a target='" . $linktarget . "'href='" . $item->address. "'>";
 						
-					$output .= $item->itemname;
+					$output .= $colspan . " - " . $columns . " - " . $item->itemname;
 										
 					if ($item->address != "")
 						"</a>";
