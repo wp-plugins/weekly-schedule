@@ -1118,7 +1118,7 @@ function ws_library() {
 						if ($options['layout'] == 'vertical')
 							$output .= "<tr class='datarow'>\n";
 							
-						$output .= "<td>" . $i . "</td>\n";
+						$output .= "<td></td>\n";
 						
 						if ($options['layout'] == 'vertical')
 							$output .= "</tr>\n";
