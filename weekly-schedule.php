@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1.1
+Version: 1.1.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -298,8 +298,6 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						$conflictquery .= " and ((" . $newitem['starttime'] . " < starttime and " . $endtime . " > starttime) or";
 						$conflictquery .= "      (" . $newitem['starttime'] . " >= starttime and " . $newitem['starttime'] . " < starttime + duration))";
 						
-						echo $conflictquery;
-												
 						$conflictingitems = $wpdb->get_results($conflictquery);
 						
 						if ($conflictingitems)
@@ -316,16 +314,13 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					{
 						if ($origrow != $row || $origday != $_POST['day'])
 						{
-							echo "Change row or day";
 							if ($origrow > 1)
 							{
-								echo "Orig row was higher than 1";
 								$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $origday);
 								
 								$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $origday . " AND row = " . $origrow . "AND id != " . $_POST['id']);
 								if (!$othersonrow)
 								{
-									echo "No other item on row";
 									if ($origrow != $itemday->rows)
 									{
 										for ($i = $origrow + 1; $i <= $itemday->rows; $i++)
@@ -340,8 +335,6 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									$dayid = array("id" => $itemday->id);
 									$newrow = $itemday->rows - 1;
 									$newdayrow = array("rows" => $newrow);
-									
-									echo "Reducing number of rows for day to " . $newrow;
 									
 									$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
 								}
@@ -1170,7 +1163,7 @@ function ws_library() {
 					if ($item->address != "")
 						$output .= "<a target='" . $linktarget . "'href='" . $item->address. "'>";
 						
-					$output .= $colspan . " - " . $columns . " - " . $item->itemname;
+					$output .= $item->itemname;
 										
 					if ($item->address != "")
 						"</a>";

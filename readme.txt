@@ -25,6 +25,9 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
 
 == Changelog ==
 
+= 1.1.2 =
+* Removed debugging statements from admin interface and generated output
+
 = 1.1.1 =
 * Corrected bugs with verfication of conflicting items upon addition or deletion of items
 
