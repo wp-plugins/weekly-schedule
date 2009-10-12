@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1.2
+Version: 1.1.3
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -41,63 +41,79 @@ function ws_install() {
 		}
 	}
 	
-	$wpdb->wscategories = $wpdb->prefix.'wscategories';
-
-	$result = $wpdb->query("
-			CREATE TABLE IF NOT EXISTS `$wpdb->wscategories` (
-				`id` int(10) unsigned NOT NULL auto_increment,
-				`name` varchar(255) NOT NULL,
-				PRIMARY KEY  (`id`)
-				) $charset_collate"); 
-				
-	$catsresult = $wpdb->query("
-			SELECT * from `$wpdb->wscategories`");
-			
-	if (!$catsresult)
-		$result = $wpdb->query("
-			INSERT INTO `$wpdb->wscategories` (`id`, `name`) VALUES
-			(1, 'Default')");				
-				
-	$wpdb->wsdays = $wpdb->prefix.'wsdays';
+	$catexistsquery = "show tables like '" . $wpdb->prefix . "wscategories";
 	
-	$result = $wpdb->query("
-			CREATE TABLE IF NOT EXISTS `$wpdb->wsdays` (
-				`id` int(10) unsigned NOT NULL,
-				`name` varchar(12) NOT NULL,
-				`rows` int(10) unsigned NOT NULL,
-				PRIMARY KEY  (`id`)
-				)  $charset_collate"); 
-				
-	$daysresult = $wpdb->query("
-			SELECT * from `$wpdb->wsdays`");
-			
-	if (!$daysresult)
-		$result = $wpdb->query("
-			INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`) VALUES
-			(1, 'Sun', 1),
-			(2, 'Mon', 1),
-			(3, 'Tue', 1),
-			(4, 'Wes', 1),
-			(5, 'Thu', 1),
-			(6, 'Fri', 1),
-			(7, 'Sat', 1)");
-			
-	$wpdb->wsitems = $wpdb->prefix.'wsitems';
-			
-	$wpdb->query("
-			CREATE TABLE IF NOT EXISTS `$wpdb->wsitems` (
-				`id` int(10) unsigned NOT NULL auto_increment,
-				`name` varchar(255) NOT NULL,
-				`description` text NOT NULL,
-				`address` varchar(255) NOT NULL,
-				`starttime` float unsigned NOT NULL,
-				`duration` float NOT NULL,
-				`row` int(10) unsigned NOT NULL,
-				`day` int(10) unsigned NOT NULL,
-				`category` int(10) unsigned NOT NULL,
-				PRIMARY KEY  (`id`)
-			) $charset_collate");
+	$catexistresult = $wpdb->query($catexistquery);
+	
+	if (!catexistquery)
+	{
+		$wpdb->wscategories = $wpdb->prefix.'wscategories';
 
+		$result = $wpdb->query("
+				CREATE TABLE IF NOT EXISTS `$wpdb->wscategories` (
+					`id` int(10) unsigned NOT NULL auto_increment,
+					`name` varchar(255) NOT NULL,
+					PRIMARY KEY  (`id`)
+					) $charset_collate"); 
+					
+		$catsresult = $wpdb->query("
+				SELECT * from `$wpdb->wscategories`");
+				
+		if (!$catsresult)
+			$result = $wpdb->query("
+				INSERT INTO `$wpdb->wscategories` (`id`, `name`) VALUES
+				(1, 'Default')");				
+					
+		$wpdb->wsdays = $wpdb->prefix.'wsdays';
+		
+		$result = $wpdb->query("
+				CREATE TABLE IF NOT EXISTS `$wpdb->wsdays` (
+					`id` int(10) unsigned NOT NULL,
+					`name` varchar(12) NOT NULL,
+					`rows` int(10) unsigned NOT NULL,
+					PRIMARY KEY  (`id`)
+					)  $charset_collate"); 
+					
+		$daysresult = $wpdb->query("
+				SELECT * from `$wpdb->wsdays`");
+				
+		if (!$daysresult)
+			$result = $wpdb->query("
+				INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`) VALUES
+				(1, 'Sun', 1),
+				(2, 'Mon', 1),
+				(3, 'Tue', 1),
+				(4, 'Wes', 1),
+				(5, 'Thu', 1),
+				(6, 'Fri', 1),
+				(7, 'Sat', 1)");
+				
+		$wpdb->wsitems = $wpdb->prefix.'wsitems';
+				
+		$wpdb->query("
+				CREATE TABLE IF NOT EXISTS `$wpdb->wsitems` (
+					`id` int(10) unsigned NOT NULL auto_increment,
+					`name` varchar(255) NOT NULL,
+					`description` text NOT NULL,
+					`address` varchar(255) NOT NULL,
+					`starttime` float unsigned NOT NULL,
+					`duration` float NOT NULL,
+					`row` int(10) unsigned NOT NULL,
+					`day` int(10) unsigned NOT NULL,
+					`category` int(10) unsigned NOT NULL,
+					PRIMARY KEY  (`id`)
+				) $charset_collate");
+	}
+	else
+	{
+		$upgradeoptions = get_option('WS_PP', "");
+		
+		$options['adjusttooltipposition'] = true;
+		$options['version'] = '1.1.3';
+		
+		update_option('WS_PP',$options);
+	}
+	
 	$options  = get_option('WS_PP',"");
 
 	if ($options == "") {
@@ -113,6 +129,7 @@ function ws_install() {
 		$options['daylist'] = "";
 		$options['timeformat'] = "24hours";
 		$options['layout'] = 'horizontal';
+		$options['adjusttooltipposition'] = true;
 		
 		update_option('WS_PP',$options);
 	}
@@ -200,6 +217,15 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							$options[$option_name] = $_POST[$option_name];
 						}
 					}
+					
+				foreach (array('adjusttooltipposition') as $option_name) {
+					if (isset($_POST[$option_name])) {
+						$options[$option_name] = true;
+					} else {
+						$options[$option_name] = false;
+					}
+				}
+
 					
 				update_option('WS_PP', $options);
 				
@@ -658,6 +684,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						?>
 					</select></td>
 					</tr>
+					<tr>
+					<td>Auto-Adjust Position to be visible</td>
+					<td><input type="checkbox" id="adjusttooltipposition" name="adjusttooltipposition" <?php if ($options['adjusttooltipposition'] == true) echo ' checked="checked" '; ?>/></td>
+					<td></td><td></td>
+					</tr>
 					</table>
 					<p style="border:0;" class="submit"><input type="submit" name="submit" value="Update Settings &raquo;" /></p>
 				</form>
@@ -741,12 +772,12 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						wp_nonce_field('wspp-config');
 					?>
 					<tr>
-					<td style='width: 100px'>Item Title</td>
-					<td><input style="width:400px" type="text" name="name" <?php if ($mode == "edit") echo "value='" . $selecteditem->name . "'";?>/></td>
+					<td style='width: 180px'>Item Title</td>
+					<td><input style="width:360px" type="text" name="name" <?php if ($mode == "edit") echo "value='" . $selecteditem->name . "'";?>/></td>
 					</tr>
 					<tr>
 					<td>Category</td>
-					<td><select style='width: 400px' name="category">
+					<td><select style='width: 360px' name="category">
 					<?php $cats = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wscategories ORDER by name");
 					
 						foreach ($cats as $cat)
@@ -762,14 +793,14 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					<tr>
 					<td>Description</td>
-					<td><textarea id="description" rows="5" cols="50" name="description"><?php if ($mode == "edit") echo  stripslashes($selecteditem->description);?></textarea></td>
+					<td><textarea id="description" rows="5" cols="45" name="description"><?php if ($mode == "edit") echo  stripslashes($selecteditem->description);?></textarea></td>
 					</tr>
 					<tr>
 					<td>Web Address</td>
-					<td><input style="width:400px" type="text" name="address" <?php if ($mode == "edit") echo "value='" . $selecteditem->address . "'";?>/></td>
+					<td><input style="width:360px" type="text" name="address" <?php if ($mode == "edit") echo "value='" . $selecteditem->address . "'";?>/></td>
 					</tr>
 					<tr>
-					<td>Day</td><td><select style='width: 400px' name="day">
+					<td>Day</td><td><select style='width: 360px' name="day">
 					<?php $days = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wsdays ORDER by id");
 					
 						foreach ($days as $day)
@@ -786,7 +817,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					<tr>
 					<td>Start Time</td>
-					<td><select style='width: 400px' name="starttime">
+					<td><select style='width: 360px' name="starttime">
 					<?php for ($i = $options['starttime']; $i < $options['endtime']; $i+= $options['timedivision'])
 						  {
 						  		if ($options['timeformat'] == '24hours')
@@ -830,7 +861,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					<tr>
 					<td>Duration</td>
-					<td><select style='width: 400px' name="duration">
+					<td><select style='width: 360px' name="duration">
 					<?php for ($i = $options['timedivision']; $i <= ($options['endtime'] - $options['starttime']); $i += $options['timedivision'])
 						  {
 								if (fmod($i, 1))
@@ -1238,6 +1269,8 @@ function ws_library() {
 		$output .= "\t\t\t\tname: '" . $options['tooltipcolorscheme'] . "', // Give it a crea mstyle to make it stand out\n";
 		$output .= "\t\t\t},\n";
 		$output .= "\t\t\tposition: {\n";
+		if ($options['adjusttooltipposition'])
+			$output .= "\t\t\t\tadjust: {screen: true},\n";
 		$output .= "\t\t\t\tcorner: {\n";
 		$output .= "\t\t\t\t\ttarget: '" . $options['tooltiptarget'] . "',\n";
 		$output .= "\t\t\t\t\ttooltip: '" . $options['tooltippoint'] . "'\n";

@@ -25,6 +25,9 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
 
 == Changelog ==
 
+= 1.1.3 =
+* Added option for tooltip position to be automatically adjusted to be in visible area.
+
 = 1.1.2 =
 * Removed debugging statements from admin interface and generated output
 
