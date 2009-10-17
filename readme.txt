@@ -25,6 +25,9 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
 
 == Changelog ==
 
+= 1.1.4 =
+* Now allows descriptions and item names to contain quotes and other special html characters
+
 = 1.1.3 =
 * Added option for tooltip position to be automatically adjusted to be in visible area.
 
