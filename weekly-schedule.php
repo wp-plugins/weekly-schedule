@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1.4
+Version: 1.1.5
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -1194,7 +1194,7 @@ function ws_library() {
 					if ($item->address != "")
 						$output .= "<a target='" . $linktarget . "'href='" . $item->address. "'>";
 						
-					$output .= htmlspecialchars(stripslashes($item->itemname), ENT_QUOTES);;
+					$output .= $item->itemname;
 										
 					if ($item->address != "")
 						"</a>";

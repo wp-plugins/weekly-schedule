@@ -25,6 +25,9 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
 
 == Changelog ==
 
+= 1.1.5 =
+* Restored ability to put HTML codes in item names
+
 = 1.1.4 =
 * Now allows descriptions and item names to contain quotes and other special html characters
 
