@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1.5
+Version: 1.1.6
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -41,82 +41,76 @@ function ws_install() {
 		}
 	}
 	
-	$catexistsquery = "show tables like '" . $wpdb->prefix . "wscategories";
-	
-	$catexistresult = $wpdb->query($catexistquery);
-	
-	if (!catexistquery)
-	{
-		$wpdb->wscategories = $wpdb->prefix.'wscategories';
+	$wpdb->wscategories = $wpdb->prefix.'wscategories';
 
-		$result = $wpdb->query("
-				CREATE TABLE IF NOT EXISTS `$wpdb->wscategories` (
-					`id` int(10) unsigned NOT NULL auto_increment,
-					`name` varchar(255) NOT NULL,
-					PRIMARY KEY  (`id`)
-					) $charset_collate"); 
-					
-		$catsresult = $wpdb->query("
-				SELECT * from `$wpdb->wscategories`");
+	$result = $wpdb->query("
+			CREATE TABLE IF NOT EXISTS `$wpdb->wscategories` (
+				`id` int(10) unsigned NOT NULL auto_increment,
+				`name` varchar(255) NOT NULL,
+				PRIMARY KEY  (`id`)
+				) $charset_collate"); 
 				
-		if (!$catsresult)
-			$result = $wpdb->query("
-				INSERT INTO `$wpdb->wscategories` (`id`, `name`) VALUES
-				(1, 'Default')");				
-					
-		$wpdb->wsdays = $wpdb->prefix.'wsdays';
+	$catsresult = $wpdb->query("
+			SELECT * from `$wpdb->wscategories`");
+			
+	if (!$catsresult)
+		$result = $wpdb->query("
+			INSERT INTO `$wpdb->wscategories` (`id`, `name`) VALUES
+			(1, 'Default')");				
+				
+	$wpdb->wsdays = $wpdb->prefix.'wsdays';
+	
+	$result = $wpdb->query("
+			CREATE TABLE IF NOT EXISTS `$wpdb->wsdays` (
+				`id` int(10) unsigned NOT NULL,
+				`name` varchar(12) NOT NULL,
+				`rows` int(10) unsigned NOT NULL,
+				PRIMARY KEY  (`id`)
+				)  $charset_collate"); 
+				
+	$daysresult = $wpdb->query("
+			SELECT * from `$wpdb->wsdays`");
+			
+	if (!$daysresult)
+		$result = $wpdb->query("
+			INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`) VALUES
+			(1, 'Sun', 1),
+			(2, 'Mon', 1),
+			(3, 'Tue', 1),
+			(4, 'Wes', 1),
+			(5, 'Thu', 1),
+			(6, 'Fri', 1),
+			(7, 'Sat', 1)");
+			
+	$wpdb->wsitems = $wpdb->prefix.'wsitems';
+			
+	$wpdb->query("
+			CREATE TABLE IF NOT EXISTS `$wpdb->wsitems` (
+				`id` int(10) unsigned NOT NULL auto_increment,
+				`name` varchar(255) NOT NULL,
+				`description` text NOT NULL,
+				`address` varchar(255) NOT NULL,
+				`starttime` float unsigned NOT NULL,
+				`duration` float NOT NULL,
+				`row` int(10) unsigned NOT NULL,
+				`day` int(10) unsigned NOT NULL,
+				`category` int(10) unsigned NOT NULL,
+				PRIMARY KEY  (`id`)
+			) $charset_collate");
+
+	$upgradeoptions = get_option('WS_PP');
 		
-		$result = $wpdb->query("
-				CREATE TABLE IF NOT EXISTS `$wpdb->wsdays` (
-					`id` int(10) unsigned NOT NULL,
-					`name` varchar(12) NOT NULL,
-					`rows` int(10) unsigned NOT NULL,
-					PRIMARY KEY  (`id`)
-					)  $charset_collate"); 
-					
-		$daysresult = $wpdb->query("
-				SELECT * from `$wpdb->wsdays`");
-				
-		if (!$daysresult)
-			$result = $wpdb->query("
-				INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`) VALUES
-				(1, 'Sun', 1),
-				(2, 'Mon', 1),
-				(3, 'Tue', 1),
-				(4, 'Wes', 1),
-				(5, 'Thu', 1),
-				(6, 'Fri', 1),
-				(7, 'Sat', 1)");
-				
-		$wpdb->wsitems = $wpdb->prefix.'wsitems';
-				
-		$wpdb->query("
-				CREATE TABLE IF NOT EXISTS `$wpdb->wsitems` (
-					`id` int(10) unsigned NOT NULL auto_increment,
-					`name` varchar(255) NOT NULL,
-					`description` text NOT NULL,
-					`address` varchar(255) NOT NULL,
-					`starttime` float unsigned NOT NULL,
-					`duration` float NOT NULL,
-					`row` int(10) unsigned NOT NULL,
-					`day` int(10) unsigned NOT NULL,
-					`category` int(10) unsigned NOT NULL,
-					PRIMARY KEY  (`id`)
-				) $charset_collate");
-	}
-	else
+	if ($upgradeoptions != false && $upgradeoptions['version'] != '1.1.3')
 	{
-		$upgradeoptions = get_option('WS_PP', "");
+		$upgradeoptions['adjusttooltipposition'] = true;
+		$upgradeoptions['version'] = '1.1.3';
 		
-		$options['adjusttooltipposition'] = true;
-		$options['version'] = '1.1.3';
-		
-		update_option('WS_PP',$options);
+		update_option('WS_PP',$upgradeoptions);
 	}
 	
-	$options  = get_option('WS_PP',"");
+	$options  = get_option('WS_PP');
 
-	if ($options == "") {
+	if ($options == false) {
 		$options['starttime'] = 19;
 		$options['endtime'] = 22;
 		$options['timedivision'] = 0.5;
@@ -130,6 +124,7 @@ function ws_install() {
 		$options['timeformat'] = "24hours";
 		$options['layout'] = 'horizontal';
 		$options['adjusttooltipposition'] = true;
+		$options['version'] = '1.1.3';
 		
 		update_option('WS_PP',$options);
 	}

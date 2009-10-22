@@ -3,7 +3,7 @@ Contributors: jackdewey
 Donate link: http://yannickcorner.nayanna.biz/wordpress-plugins/weekly-schedule/
 Tags: schedule, grid, weekly, tooltip, jQuery
 Requires at least: 2.8
-Tested up to: 2.8.4
+Tested up to: 2.8.5
 Stable tag: trunk
 
 The purpose of this plugin is to allow users to create a schedule of weekly events and display that schedule on a page in a table form. Users can style events using stylesheets based on their category and can assign information to items that will be displayed in a tooltip.
@@ -24,6 +24,10 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
    [weekly-schedule]
 
 == Changelog ==
+
+= 1.1.6 =
+* Corrected problem with creation of tables on installation
+* Corrected problem of lost settings on upgrade
 
 = 1.1.5 =
 * Restored ability to put HTML codes in item names
