@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1.6
+Version: 1.1.7
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2009  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -125,6 +125,7 @@ function ws_install() {
 		$options['layout'] = 'horizontal';
 		$options['adjusttooltipposition'] = true;
 		$options['version'] = '1.1.3';
+		$options['includestylescript'] = '';
 		
 		update_option('WS_PP',$options);
 	}
@@ -207,7 +208,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$options['timedivision'] = $_POST['timedivision'];
 
 				foreach (array('starttime','endtime','tooltipwidth','tooltiptarget','tooltippoint','tooltipcolorscheme',
-						'stylesheet','displaydescription','daylist', 'timeformat', 'layout') as $option_name) {
+						'stylesheet','displaydescription','daylist', 'timeformat', 'layout', 'includestylescript') as $option_name) {
 						if (isset($_POST[$option_name])) {
 							$options[$option_name] = $_POST[$option_name];
 						}
@@ -612,10 +613,18 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						<td colspan='2'><input type='text' name='daylist' style='width: 200px' value='<?php echo $options['daylist']; ?>' />
 						</td>						
 					</tr>
+					</table>
+					<br /><br />
+					<strong>Layout Configuration</strong>
+					<table>
 					<tr>
-					<td colspan="4">Stylesheet File (should be in weekly-schedule plugin folder)</td></tr>
-					<tr><td colspan="4"><input type='text' name='stylesheet' style='width: 200px' value='<?php echo $options['stylesheet']; ?>' /></td>
+					<td colspan="2">Stylesheet File (should be in weekly-schedule plugin folder)</td>
+					<td colspan="2"><input type='text' name='stylesheet' style='width: 200px' value='<?php echo $options['stylesheet']; ?>' /></td>
 					</tr>
+					<tr>
+					<td colspan="2">Additional pages to load styles and scripts (Comma-Separated List of Page IDs)</td>
+					<td colspan="2"><input type='text' name='includestylescript' style='width: 200px' value='<?php echo $options['includestylescript']; ?>' /></td>
+					</tr>					
 					</table>
 					<br /><br />
 					<strong>Tooltip Configuration</strong>
@@ -1284,26 +1293,88 @@ function ws_library() {
 
 $version = "1.0";
 
-function ws_library_header()
-{
-	$options = get_option('WS_PP');
-	echo '<link rel="stylesheet" type="text/css" media="screen" href="' . WP_PLUGIN_URL . '/weekly-schedule/' . $options['stylesheet'] . '"/>';
-}
-
-function weekly_schedule_init() {
-	wp_enqueue_script('qtip', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-1.0.0-rc3.min.js');
-}  
-
-
 // adds the menu item to the admin interface
 add_action('admin_menu', array('WS_Admin','add_config_page'));
 
-add_action('init', 'weekly_schedule_init');
-
-wp_enqueue_script('jquery');
-
-add_action('wp_head', 'ws_library_header');
-
 add_shortcode('weekly-schedule', 'ws_library_func');
+
+add_filter('the_posts', 'ws_conditionally_add_scripts_and_styles'); // the_posts gets triggered before wp_head
+
+function ws_conditionally_add_scripts_and_styles($posts){
+	if (empty($posts)) return $posts;
+	
+	$load_jquery = false;
+	$load_qtip = false;
+	$load_style = false;
+	
+	$options = get_option('WS_PP');
+
+	if (is_admin()) 
+	{
+		$load_jquery = true;
+		$load_qtip = true;
+		$load_style = false;
+	}
+	else
+	{
+		foreach ($posts as $post) {		
+			$continuesearch = true;
+			$searchpos = 0;
+			$settingsetids = array();
+			
+			while ($continuesearch) 
+			{
+				$weeklyschedulepos = stripos($post->post_content, 'weekly-schedule', $searchpos);
+				$continuesearch = $weeklyschedulepos;
+
+				if ($weeklyschedulepos)
+				{
+					$load_style = true;
+					$shortcodeend = stripos($post->post_content, ']', $linklibrarypos);
+					$searchpos = $shortcodeend;
+					
+					if ($options['displaydescription'] == "tooltip")
+					{
+						$load_jquery = true;
+						$load_qtip = true;
+					}						
+				}	
+			}
+		}
+					
+		if ($options['includestylescript'] != '')
+		{
+			$pagelist = explode (',', $options['includestylescript']);
+			foreach($pagelist as $pageid) {
+				if (is_page($pageid))
+				{
+					$load_jquery = true;
+					$load_qtip = true;
+					$load_style = true;
+				}
+			}
+		}
+	}
+	
+	if ($load_style)
+	{		
+		if ($options == "")
+			$options['stylesheet'] = 'stylesheet.css';
+			
+		wp_enqueue_style('weeklyschedulestyle', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/' . $options['stylesheet']);	
+	}
+ 
+	if ($load_jquery)
+	{
+		wp_enqueue_script('jquery');
+	}
+	
+	if ($load_qtip)
+	{
+		wp_enqueue_script('qtip', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-1.0.0-rc3.min.js');
+	}
+	 
+	return $posts;
+}
 
 ?>
