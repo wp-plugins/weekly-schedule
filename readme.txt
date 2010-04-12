@@ -25,6 +25,10 @@ You can see a demonstration of the output of the plugin [here](http://yannickcor
 
 == Changelog ==
 
+= 1.1.8 =
+* Fixed: 12:30pm was showing as 0:30pm.
+* Tested with Wordpress 3.0 Beta 1
+
 = 1.1.7 =
 * Only load stylesheets and scripts if necessary
 
