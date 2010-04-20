@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.0.2 =
+* Added reference links at top of admin page
+
 = 2.0.1 =
 * Added extra styles to work with times up to 4 hours in vertical mode
 
