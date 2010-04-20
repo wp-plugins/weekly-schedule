@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.0.1 =
+* Added extra styles to work with times up to 4 hours in vertical mode
+
 = 2.0 =
 * New Feature: Added ability to define and display multiple schedules on a Wordpress page
 
