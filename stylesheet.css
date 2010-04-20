@@ -1,112 +1,109 @@
-#ws-schedule a {
+.ws-schedule a {
 	color: #000000;
 	text-decoration: none;
 }
-#ws-schedule a:hover {
+.ws-schedule a:hover {
 	text-decoration: underline;
 	color: #FFFFFF;
 }
-#ws-schedule table {
+.ws-schedule table {
 	width: 96%;
 	table-layout: fixed;
 	}
-#ws-schedule .verticalcolumn {
+.ws-schedule .verticalcolumn {
 	float: left;
 }
-#ws-schedule table.verticalheader {
+.ws-schedule table.verticalheader {
 	width: 100px;
 }
-#ws-schedule table.vertical {
+.ws-schedule table.vertical {
 	width: 100px;
 }
-#ws-schedule th.rowheader {
-	width: 50px;
+.ws-schedule th.rowheader {
+	width: 30px;
 	height: 50px;
 }
-#ws-schedule th {
+.ws-schedule th {
 	background: #F5F5DC;
 	text-align: center;
 	vertical-align: middle;
 }
-#ws-schedule tr.topheader {
+.ws-schedule tr.topheader {
 	height: 30px;
 }
-#ws-schedule tr.row1 {
+.ws-schedule tr.row1 {
 	height: 100px;
 	vertical-align: top;
 }
-#ws-schedule tr.row2 {
+.ws-schedule tr.row2 {
 	height: 50px;
 	vertical-align: top;
 }
-#ws-schedule #3rowstall {
+.ws-schedule #3rowstall {
 	height: 90px;
 }
-#ws-schedule tr.datarow {
+.ws-schedule tr.datarow {
 	height: 70px;
 }
-#ws-schedule tr.datarow1 {
+.ws-schedule tr.datarow1 {
 	height: 70px;
 }
-#ws-schedule tr.datarow2 {
+.ws-schedule tr.datarow2 {
 	height: 142px;
 }
-#ws-schedule tr.datarow3 {
+.ws-schedule tr.datarow3 {
 	height: 214px;
 }
-#ws-schedule tr.vertrow {
-	width: 100px;
+.ws-schedule tr.vertrow {
+	width: 50px;
 }
-#ws-schedule tr.vertrow {
-	width: 100px;
-}
-#ws-schedule td:hover {
+.ws-schedule td:hover {
 	background: #CCCCCC;
 }
-#ws-schedule table td {
+.ws-schedule table td {
 	background: #EEEEEE;
 }
-#ws-schedule td.cat1, td.cat2, td.cat3, td.cat4, td.cat5 {
+.ws-schedule td.cat1, td.cat2, td.cat3, td.cat4, td.cat5 {
 	border: 1px solid;
 }
-#ws-schedule td.cat1 {
+.ws-schedule td.cat1 {
 	background: #009B95 no-repeat bottom right;
 	border-color: #006561;
 }
-#ws-schedule td.cat1:hover {
+.ws-schedule td.cat1:hover {
 	background-color: #33CDC7;
 }
-#ws-schedule td.cat2 {
+.ws-schedule td.cat2 {
 	background: #4282D3 no-repeat bottom right;
 	border-color: #05326D;
 }
-#ws-schedule td.cat2:hover {
+.ws-schedule td.cat2:hover {
 	background-color: #6997D3;
 }
-#ws-schedule td.cat3 {
+.ws-schedule td.cat3 {
 	background: #FF9E00 no-repeat bottom right;
 	border-color: #BF8830;
 }
-#ws-schedule td.cat3:hover {
+.ws-schedule td.cat3:hover {
 	background-color: #FFC973;
 }
-#ws-schedule td.cat4 {
+.ws-schedule td.cat4 {
 	background: #FF7100 no-repeat bottom right;
 	border-color: #A64A00;
 }
-#ws-schedule td.cat4:hover {
+.ws-schedule td.cat4:hover {
 	background-color: #FF9540;
 }
-#ws-schedule td.cat5 {
+.ws-schedule td.cat5 {
 	background: #00B358 no-repeat bottom right;
 	border-color: #007439;
 }
-#ws-schedule td.cat5:hover {
+.ws-schedule td.cat5:hover {
 	background-color: #62D99C;
 }
-#ws-schedule #continuedown {
+.ws-schedule #continuedown {
 	border-bottom: dashed 2px #000000;
 }
-#ws-schedule #continueright {
+.ws-schedule #continueright {
 	border-right: dashed 2px #000000;
 }

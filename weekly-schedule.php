@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 1.1.8
+Version: 2.0
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -47,6 +47,7 @@ function ws_install() {
 			CREATE TABLE IF NOT EXISTS `$wpdb->wscategories` (
 				`id` int(10) unsigned NOT NULL auto_increment,
 				`name` varchar(255) NOT NULL,
+				`scheduleid` int(10) default NULL,
 				PRIMARY KEY  (`id`)
 				) $charset_collate"); 
 				
@@ -55,8 +56,8 @@ function ws_install() {
 			
 	if (!$catsresult)
 		$result = $wpdb->query("
-			INSERT INTO `$wpdb->wscategories` (`id`, `name`) VALUES
-			(1, 'Default')");				
+			INSERT INTO `$wpdb->wscategories` (`name`, `scheduleid`) VALUES
+			('Default', 1)");				
 				
 	$wpdb->wsdays = $wpdb->prefix.'wsdays';
 	
@@ -65,7 +66,8 @@ function ws_install() {
 				`id` int(10) unsigned NOT NULL,
 				`name` varchar(12) NOT NULL,
 				`rows` int(10) unsigned NOT NULL,
-				PRIMARY KEY  (`id`)
+				`scheduleid` int(10) NOT NULL default '0',
+				PRIMARY KEY  (`id`, `scheduleid`)
 				)  $charset_collate"); 
 				
 	$daysresult = $wpdb->query("
@@ -73,14 +75,14 @@ function ws_install() {
 			
 	if (!$daysresult)
 		$result = $wpdb->query("
-			INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`) VALUES
-			(1, 'Sun', 1),
-			(2, 'Mon', 1),
-			(3, 'Tue', 1),
-			(4, 'Wes', 1),
-			(5, 'Thu', 1),
-			(6, 'Fri', 1),
-			(7, 'Sat', 1)");
+			INSERT INTO `$wpdb->wsdays` (`id`, `name`, `rows`, `scheduleid`) VALUES
+			(1, 'Sun', 1, 1),
+			(2, 'Mon', 1, 1),
+			(3, 'Tue', 1, 1),
+			(4, 'Wes', 1, 1),
+			(5, 'Thu', 1, 1),
+			(6, 'Fri', 1, 1),
+			(7, 'Sat', 1, 1)");
 			
 	$wpdb->wsitems = $wpdb->prefix.'wsitems';
 			
@@ -95,20 +97,49 @@ function ws_install() {
 				`row` int(10) unsigned NOT NULL,
 				`day` int(10) unsigned NOT NULL,
 				`category` int(10) unsigned NOT NULL,
-				PRIMARY KEY  (`id`)
+				`scheduleid` int(10) NOT NULL default '0',
+				PRIMARY KEY  (`id`,`scheduleid`)
 			) $charset_collate");
 
 	$upgradeoptions = get_option('WS_PP');
-		
-	if ($upgradeoptions != false && $upgradeoptions['version'] != '1.1.3')
-	{
-		$upgradeoptions['adjusttooltipposition'] = true;
-		$upgradeoptions['version'] = '1.1.3';
-		
-		update_option('WS_PP',$upgradeoptions);
-	}
 	
-	$options  = get_option('WS_PP');
+	if ($upgradeoptions != false)
+	{
+		if ($upgradeoptions['version'] != '2.0')
+		{
+			delete_option("WS_PP");
+			
+			$wpdb->query("ALTER TABLE `$wpdb->wscategories` ADD scheduleid int(10)");
+			$wpdb->query("UPDATE `$wpdb->wscategories` set scheduleid = 1");
+			
+			$wpdb->query("ALTER TABLE `$wpdb->wsitems` ADD scheduleid int(10)");
+			$wpdb->query("ALTER TABLE `$wpdb->wsitems` CHANGE `id` `id` INT( 10 ) UNSIGNED NOT NULL");
+			$wpdb->query("ALTER TABLE `$wpdb->wsitems` DROP PRIMARY KEY");
+			$wpdb->query("ALTER TABLE `$wpdb->wsitems` ADD PRIMARY KEY (id, scheduleid)");
+			$wpdb->query("ALTER TABLE `$wpdb->wsitems` CHANGE `id` `id` INT( 10 ) UNSIGNED NOT NULL AUTO_INCREMENT");			
+			$wpdb->query("UPDATE `$wpdb->wsitems` set scheduleid = 1");
+			
+			$wpdb->query("ALTER TABLE `$wpdb->wsdays` ADD scheduleid int(10)");
+			$wpdb->query("ALTER TABLE `$wpdb->wsdays` DROP PRIMARY KEY");
+			$wpdb->query("ALTER TABLE `$wpdb->wsdays` ADD PRIMARY KEY (id, scheduleid)");
+			$wpdb->query("UPDATE `$wpdb->wsdays` set scheduleid = 1");
+		
+			$upgradeoptions['adjusttooltipposition'] = true;
+			$upgradeoptions['schedulename'] = "Default";
+			
+			update_option('WS_PP1',$upgradeoptions);
+		
+			$genoptions['stylesheet'] = $upgradeoptions['stylesheet'];
+			$genoptions['numberschedules'] = 2;
+			$genoptions['debugmode'] = false;
+			$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
+			$genoptions['version'] = "2.0";
+		
+			update_option('WeeklyScheduleGeneral', $genoptions);		
+		}
+	}		
+	
+	$options = get_option('WS_PP1');
 
 	if ($options == false) {
 		$options['starttime'] = 19;
@@ -118,22 +149,30 @@ function ws_install() {
 		$options['tooltiptarget'] = 'rightMiddle';
 		$options['tooltippoint'] = 'leftMiddle';
 		$options['tooltipcolorscheme'] = 'cream';
-		$options['stylesheet'] = "stylesheet.css";
 		$options['displaydescription'] = "tooltip";
 		$options['daylist'] = "";
 		$options['timeformat'] = "24hours";
 		$options['layout'] = 'horizontal';
 		$options['adjusttooltipposition'] = true;
-		$options['version'] = '1.1.3';
-		$options['includestylescript'] = '';
+		$options['schedulename'] = "Default";
 		
-		update_option('WS_PP',$options);
+		update_option('WS_PP1',$options);
+	}
+	
+	$genoptions = get_option("WeeklyScheduleGeneral");
+	
+	if ($genoptions == false) {
+		$genoptions['stylesheet'] = "stylesheet.css";
+		$genoptions['numberschedules'] = 2;
+		$genoptions['debugmode'] = false;
+		$genoptions['includestylescript'] = "";
+		$genoptions['version'] = "2.0";
+		
+		update_option("WeeklyScheduleGeneral", $genoptions);
 	}
 
 }
 register_activation_hook(WS_FILE, 'ws_install');
-
-
 
 if ( ! class_exists( 'WS_Admin' ) ) {
 	class WS_Admin {		
@@ -142,7 +181,6 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			if ( function_exists('add_submenu_page') ) {
 				add_options_page('Weekly Schedule for Wordpress', 'Weekly Schedule', 9, basename(__FILE__), array('WS_Admin','config_page'));
 				add_filter( 'plugin_action_links', array( 'WS_Admin', 'filter_plugin_actions'), 10, 2 );
-				add_filter( 'ozh_adminmenu_icon', array( 'WS_Admin', 'add_ozh_adminmenu_icon' ) );
 							}
 		} // end add_WS_config_page()
 
@@ -163,10 +201,52 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			global $wpdb;
 			
 			$adminpage == "";
+			
+			if ( !defined('WP_ADMIN_URL') )
+				define( 'WP_ADMIN_URL', get_option('siteurl') . '/wp-admin');
+			
+			if ( isset($_GET['schedule'])) {
+				$schedule = $_GET['schedule'];				
+			}
+			else
+			{
+				$schedule = 1;
+			}
+			
+			if ( isset($_GET['copy']))
+			{
+				$destination = $_GET['copy'];
+				$source = $_GET['source'];
+				
+				$sourcesettingsname = 'WS_PP' . $source;
+				$sourceoptions = get_option($sourcesettingsname);
+				
+				$destinationsettingsname = 'WS_PP' . $destination;
+				update_option($destinationsettingsname, $sourceoptions);
+				
+				$schedule = $destination;
+			}
 
 			if ( isset($_GET['reset']) && $_GET['reset'] == "true") {
+			
+				$options['starttime'] = 19;
+				$options['endtime'] = 22;
+				$options['timedivision'] = 0.5;
+				$options['tooltipwidth'] = 300;
+				$options['tooltiptarget'] = 'rightMiddle';
+				$options['tooltippoint'] = 'leftMiddle';
+				$options['tooltipcolorscheme'] = 'cream';
+				$options['displaydescription'] = "tooltip";
+				$options['daylist'] = "";
+				$options['timeformat'] = "24hours";
+				$options['layout'] = 'horizontal';
+				$options['adjusttooltipposition'] = true;
+				$options['schedulename'] = "Default";
+			
+				$schedule = $_GET['reset'];
+				$schedulename = 'WS_PP' . $schedule;
 				
-				update_option('WS_PP',$options);
+				update_option($schedulename, $options);
 			}
 			if ( isset($_GET['settings']))
 			{
@@ -208,7 +288,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$options['timedivision'] = $_POST['timedivision'];
 
 				foreach (array('starttime','endtime','tooltipwidth','tooltiptarget','tooltippoint','tooltipcolorscheme',
-						'stylesheet','displaydescription','daylist', 'timeformat', 'layout', 'includestylescript') as $option_name) {
+						'displaydescription','daylist', 'timeformat', 'layout', 'schedulename') as $option_name) {
 						if (isset($_POST[$option_name])) {
 							$options[$option_name] = $_POST[$option_name];
 						}
@@ -222,10 +302,32 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					}
 				}
 
-					
-				update_option('WS_PP', $options);
 				
-				echo '<div id="message" class="updated fade"><p><strong>Weekly Schedule Settings Updated</strong></div>';
+				$schedulename = 'WS_PP' . $schedule;
+				update_option($schedulename, $options);
+				
+				echo '<div id="message" class="updated fade"><p><strong>Weekly Schedule: Schedule ' . $schedule . ' Updated</strong></div>';
+			}
+			if (isset($_POST['submitgen']))
+			{
+				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
+				check_admin_referer('wspp-config');
+				
+				foreach (array('stylesheet', 'numberschedules') as $option_name) {
+					if (isset($_POST[$option_name])) {
+						$genoptions[$option_name] = $_POST[$option_name];
+					}
+				}
+				
+				foreach (array('debugmode') as $option_name) {
+					if (isset($_POST[$option_name])) {
+						$genoptions[$option_name] = true;
+					} else {
+						$genoptions[$option_name] = false;
+					}
+				}
+				
+				update_option('WeeklyScheduleGeneral', $genoptions);				
 			}
 			if ( isset($_GET['editcat']))
 			{					
@@ -240,12 +342,13 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				check_admin_referer('wspp-config');
 				
 				if (isset($_POST['name']))
-					$newcat = array("name" => $_POST['name']);
+					$newcat = array("name" => $_POST['name'], "scheduleid" => $_POST['schedule']);
 				else
 					$newcat = "";
 					
 				if (isset($_POST['id']))
 					$id = array("id" => $_POST['id']);
+					
 					
 				if (isset($_POST['newcat']))
 				{
@@ -280,10 +383,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				$mode = "edit";
 								
-				$selecteditem = $wpdb->get_row("select * from " . $wpdb->prefix . "wsitems where id = " . $_GET['edititem']);
+				$selecteditem = $wpdb->get_row("select * from " . $wpdb->prefix . "wsitems where id = " . $_GET['edititem'] . " AND scheduleid = " . $_GET['schedule']);
 			}
 			if (isset($_POST['newitem']) || isset($_POST['updateitem']))
 			{
+			// Need to re-work all of this to support multiple schedules 
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
 				check_admin_referer('wspp-config');
 				
@@ -295,7 +399,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									 "starttime" => $_POST['starttime'],
 									 "category" => $_POST['category'],
 									 "duration" => $_POST['duration'],
-									 "day" => $_POST['day']);
+									 "day" => $_POST['day'],
+									 "scheduleid" => $_POST['schedule']);
 									 
 					if (isset($_POST['updateitem']))
 					{
@@ -317,8 +422,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					
 						$conflictquery = "SELECT * from " . $wpdb->prefix . "wsitems where day = " . $newitem['day'] . $checkid;
 						$conflictquery .= " and row = " . $row;
+						$conflictquery .= " and scheduleid = " . $newitem['scheduleid'];
 						$conflictquery .= " and ((" . $newitem['starttime'] . " < starttime and " . $endtime . " > starttime) or";
-						$conflictquery .= "      (" . $newitem['starttime'] . " >= starttime and " . $newitem['starttime'] . " < starttime + duration))";
+						$conflictquery .= "      (" . $newitem['starttime'] . " >= starttime and " . $newitem['starttime'] . " < starttime + duration)) ";
 						
 						$conflictingitems = $wpdb->get_results($conflictquery);
 						
@@ -338,9 +444,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						{
 							if ($origrow > 1)
 							{
-								$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $origday);
+								$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $origday . " AND scheduleid = " . $_POST['schedule']);
 								
-								$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $origday . " AND row = " . $origrow . "AND id != " . $_POST['id']);
+								$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $origday . " AND row = " . $origrow . " AND scheduleid = " . $_POST['schedule'] . " AND id != " . $_POST['id']);
 								if (!$othersonrow)
 								{
 									if ($origrow != $itemday->rows)
@@ -354,7 +460,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 										}
 									}
 									
-									$dayid = array("id" => $itemday->id);
+									$dayid = array("id" => $itemday->id, "scheduleid" => $_POST['schedule']);
 									$newrow = $itemday->rows - 1;
 									$newdayrow = array("rows" => $newrow);
 									
@@ -364,10 +470,10 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						}
 					}
 					
-					$dayrow = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays where id = " . $_POST['day']);
+					$dayrow = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays where id = " . $_POST['day'] . " AND scheduleid = " . $_POST['schedule']);
 					if ($dayrow->rows < $row)
 					{
-						$dayid = array("id" => $_POST['day']);
+						$dayid = array("id" => $_POST['day'], "scheduleid" => $_POST['schedule']);
 						$newdayrow = array("rows" => $row);
 						
 						$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
@@ -376,7 +482,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$newitem['row'] = $row;
 						
 					if (isset($_POST['id']))
-						$id = array("id" => $_POST['id']);
+						$id = array("id" => $_POST['id'], "scheduleid" => $_POST['schedule']);
 						
 					if (isset($_POST['newitem']))
 					{
@@ -398,16 +504,16 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			{
 				$adminpage = 'items';
 				
-				$itemexist = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem']);
-				$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $itemexist->day);
+				$itemexist = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem'] . " AND scheduleid = " . $_GET['schedule']);
+				$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $itemexist->day . " AND scheduleid = " . $_GET['schedule']);
 				
 				if ($itemexist)
 				{
-					$wpdb->query("DELETE from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem']);
+					$wpdb->query("DELETE from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem'] . " AND scheduleid = " . $_GET['schedule']);
 					
 					if ($itemday->rows > 1)
 					{						
-						$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $itemexist->day . " AND row = " . $itemexist->row);
+						$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $itemexist->day . " AND scheduleid = " . $_GET['schedule'] . " AND row = " . $itemexist->row);
 						if (!$othersonrow)
 						{
 							if ($itemexist->row != $itemday->rows)
@@ -421,7 +527,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								}
 							}
 							
-							$dayid = array("id" => $itemexist->day);
+							$dayid = array("id" => $itemexist->day, "scheduleid" => $_GET['schedule']);
 							$newrow = $itemday->rows - 1;
 							$newdayrow = array("rows" => $newrow);
 							
@@ -429,8 +535,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						}
 					}	
 					echo '<div id="message" class="updated fade"><p><strong>Item Deleted</strong></div>';
-				}
-				
+				}				
 			}
 			if (isset($_POST['updatedays']))
 			{
@@ -439,25 +544,185 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				foreach($dayids as $dayid)
 				{
 					$daynamearray = array("name" => $_POST[$dayid]);
-					$dayidarray = array("id" => $dayid);
+					$dayidarray = array("id" => $dayid, "scheduleid" => $_POST['schedule']);
 					
 					$wpdb->update($wpdb->prefix . 'wsdays', $daynamearray, $dayidarray);
 				}					
 			}
 			
 			$wspluginpath = WP_CONTENT_URL.'/plugins/'.plugin_basename(dirname(__FILE__)).'/';
+	
+			if ($schedule == '')
+			{
+				$options = get_option('WS_PP1');
+				if ($options == false)
+				{
+					$oldoptions = get_option('WS_PP');
+					if ($options)
+						echo "If you are upgrading from versions before 2.0, please deactivate and reactivate the plugin in the Wordpress Plugins admin to upgrade all tables correctly.";
+				}
+					
+				$schedule = 1;
+			}
+			else
+			{
+				$settingsname = 'WS_PP' . $schedule;
+				$options = get_option($settingsname);
+			}
 
-			$options  = get_option('WS_PP');
+			if ($options == "")
+			{
+				$options['starttime'] = 19;
+				$options['endtime'] = 22;
+				$options['timedivision'] = 0.5;
+				$options['tooltipwidth'] = 300;
+				$options['tooltiptarget'] = 'rightMiddle';
+				$options['tooltippoint'] = 'leftMiddle';
+				$options['tooltipcolorscheme'] = 'cream';
+				$options['displaydescription'] = "tooltip";
+				$options['daylist'] = "";
+				$options['timeformat'] = "24hours";
+				$options['layout'] = 'horizontal';
+				$options['adjusttooltipposition'] = true;
+				$options['schedulename'] = "Default";
+			
+				$schedulename = 'WS_PP' . $schedule;
+				
+				update_option($schedulename, $options);
+				
+				$catsresult = $wpdb->query("SELECT * from " . $wpdb->prefix . "wscategories where scheduleid = " . $schedule);
+						
+				if (!$catsresult)
+				{
+					$sqlstatement = "INSERT INTO " . $wpdb->prefix . "wscategories (`name`, `scheduleid`) VALUES 
+									('Default', " . $schedule . ")";
+					$result = $wpdb->query($sqlstatement);
+				}
+
+				$wpdb->wsdays = $wpdb->prefix.'wsdays';
+										
+				$daysresult = $wpdb->query("SELECT * from " . $wpdb->prefix . "wsdays where scheduleid = " . $schedule);
+						
+				if (!$daysresult)
+				{
+					$sqlstatement = "INSERT INTO " . $wpdb->prefix . "wsdays (`id`, `name`, `rows`, `scheduleid`) VALUES
+									(1, 'Sun', 1, " . $schedule . "),
+									(2, 'Mon', 1, " . $schedule . "),
+									(3, 'Tue', 1, " . $schedule . "),
+									(4, 'Wes', 1, " . $schedule . "),
+									(5, 'Thu', 1, " . $schedule . "),
+									(6, 'Fri', 1, " . $schedule . "),
+									(7, 'Sat', 1, " . $schedule . ")";
+					$result = $wpdb->query($sqlstatement);
+				}
+			}
+			
+			$genoptions = get_option('WeeklyScheduleGeneral');
+			
+			if ($genoptions == "")
+			{			
+				$genoptions['stylesheet'] = $upgradeoptions['stylesheet'];
+				$genoptions['numberschedules'] = 2;
+				$genoptions['debugmode'] = false;
+				$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
+				$genoptions['version'] = "2.0";
+		
+				update_option('WeeklyScheduleGeneral', $genoptions);	
+			}
+			
 			?>
 			<div class="wrap">
-				<h2>Weekly Schedule Configuration</h2>		
+				<h2>Weekly Schedule Configuration</h2>
+				
+				<form name='wsadmingenform' action="<?php echo WP_ADMIN_URL ?>/options-general.php?page=weekly-schedule.php" method="post" id="ws-conf">
+				<?php
+				if ( function_exists('wp_nonce_field') )
+						wp_nonce_field('wspp-config');
+					?>
+				<fieldset style='border:1px solid #CCC;padding:10px'>
+				<legend class="tooltip" title='These apply to all schedules' style='padding: 0 5px 0 5px;'><strong>General Settings <span style="border:0;padding-left: 15px;" class="submit"><input type="submit" name="submitgen" value="Update General Settings &raquo;" /></span></strong></legend>
+				<table>
+				<tr>
+				<td style='width:200px'>Stylesheet File Name</td>
+				<td><input type="text" id="stylesheet" name="stylesheet" size="40" value="<?php echo $genoptions['stylesheet']; ?>"/></td>
+				<td style='padding-left: 10px;padding-right:10px'>Number of Schedules</td>
+				<td><input type="text" id="numberschedules" name="numberschedules" size="5" value="<?php if ($genoptions['numberschedules'] == '') echo '2'; echo $genoptions['numberschedules']; ?>"/></td>
+				</tr>
+				<tr>
+				<td style="padding-left: 10px;padding-right:10px">Debug Mode</td>
+				<td><input type="checkbox" id="debugmode" name="debugmode" <?php if ($genoptions['debugmode']) echo ' checked="checked" '; ?>/></td>
+				</tr>
+				<tr>
+					<td colspan="2">Additional pages to load styles and scripts (Comma-Separated List of Page IDs)</td>
+					<td colspan="2"><input type='text' name='includestylescript' style='width: 200px' value='<?php echo $genoptions['includestylescript']; ?>' /></td>
+				</tr>
+				</table>
+				</fieldset>
+				</form>
+
+				<div style='padding-top: 15px;clear:both'>
+					<fieldset style='border:1px solid #CCC;padding:10px'>
+					<legend style='padding: 0 5px 0 5px;'><strong>Schedule Selection and Usage Instructions</strong></legend>				
+						<FORM name="scheduleselection">
+							Select Current Style Set: 
+							<SELECT name="schedulelist" style='width: 300px'>
+							<?php if ($genoptions['numberschedules'] == '') $numberofschedules = 2; else $numberofschedules = $genoptions['numberschedules'];
+								for ($counter = 1; $counter <= $numberofschedules; $counter++): ?>
+									<?php $tempoptionname = "WS_PP" . $counter;
+									   $tempoptions = get_option($tempoptionname); ?>
+									   <option value="<?php echo $counter ?>" <?php if ($schedule == $counter) echo 'SELECTED';?>>Schedule <?php echo $counter ?><?php if ($tempoptions != "") echo " (" . $tempoptions['schedulename'] . ")"; ?></option>
+								<?php endfor; ?>
+							</SELECT>
+							<INPUT type="button" name="go" value="Go!" onClick="window.location= '?page=weekly-schedule.php&amp;settings=<?php echo $adminpage; ?>&amp;schedule=' + document.scheduleselection.schedulelist.options[document.scheduleselection.schedulelist.selectedIndex].value">						
+							Copy from: 
+							<SELECT name="copysource" style='width: 300px'>
+							<?php if ($genoptions['numberschedules'] == '') $numberofschedules = 2; else $numberofschedules = $genoptions['numberschedules'];
+								for ($counter = 1; $counter <= $numberofschedules; $counter++): ?>
+									<?php $tempoptionname = "WS_PP" . $counter;
+									   $tempoptions = get_option($tempoptionname); 
+									   if ($counter != $schedule):?>
+									   <option value="<?php echo $counter ?>" <?php if ($schedule == $counter) echo 'SELECTED';?>>Schedule <?php echo $counter ?><?php if ($tempoptions != "") echo " (" . $tempoptions['schedulename'] . ")"; ?></option>
+									   <?php endif; 
+								    endfor; ?>
+							</SELECT>
+							<INPUT type="button" name="copy" value="Copy!" onClick="window.location= '?page=weekly-schedule.php&amp;copy=<?php echo $schedule; ?>&source=' + document.scheduleselection.copysource.options[document.scheduleselection.copysource.selectedIndex].value">							
+					<br />
+					<br />
+					<table class='widefat' style='clear:none;width:100%;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
+						<thead>
+						<tr>
+							<th style='width:80px' class="tooltip">
+								Schedule #
+							</th>
+							<th style='width:130px' class="tooltip">
+								Schedule Name
+							</th>
+							<th class="tooltip">
+								Code to insert on a Wordpress page to see Weekly Schedule
+							</th>
+						</tr>
+						</thead>
+						<tr>
+						<td style='background: #FFF'><?php echo $schedule; ?></td><td style='background: #FFF'><?php echo $options['schedulename']; ?></a></td><td style='background: #FFF'><?php echo "[weekly-schedule schedule=" . $schedule . "]"; ?></td><td style='background: #FFF;text-align:center'></td>
+						</tr>
+					</table> 
+					<br />
+					</FORM>
+					</fieldset>
+				</div>
+				<br />
+
+	
+				<fieldset style='border:1px solid #CCC;padding:10px'>
+				<legend style='padding: 0 5px 0 5px;'><strong>Settings for Schedule <?php echo $schedule; ?> - <?php echo $options['schedulename']; ?></strong></legend>	
 				<?php if (($adminpage == "") || ($adminpage == "general")): ?>
-				<a href="?page=weekly-schedule.php&amp;settings=general"><strong>General Settings</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=categories">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days">Manage Days Labels</a><br /><br />
-				<form name="wsadminform" action="" method="post" id="ws-config">
+				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>"><strong>General Settings</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
+				<form name="wsadminform" action="<?php echo WP_ADMIN_URL ?>/options-general.php?page=weekly-schedule.php" method="post" id="ws-config">
 				<?php
 					if ( function_exists('wp_nonce_field') )
 						wp_nonce_field('wspp-config');
 					?>
+					Schedule Name: <input type="text" id="schedulename" name="schedulename" size="80" value="<?php echo $options['schedulename']; ?>"/><br /><br />
 					<strong>Time-related Settings</strong><br />
 					<table>
 					<tr>
@@ -510,8 +775,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									else
 									{
 										$timeperiod = "pm";
-										if ($i == 12)
-											$hour = $i;
+										if ($i >= 12 && $i < 13)
+											$hour = floor($i);
 										else
 											$hour = floor($i) - 12;
 									}
@@ -553,8 +818,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									else
 									{
 										$timeperiod = "pm";
-										if ($i == 12)
-											$hour = $i;
+										if ($i >= 12 && $i < 13)
+											$hour = floor($i);
 										else
 											$hour = floor($i) - 12;
 									}
@@ -613,18 +878,6 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						<td colspan='2'><input type='text' name='daylist' style='width: 200px' value='<?php echo $options['daylist']; ?>' />
 						</td>						
 					</tr>
-					</table>
-					<br /><br />
-					<strong>Layout Configuration</strong>
-					<table>
-					<tr>
-					<td colspan="2">Stylesheet File (should be in weekly-schedule plugin folder)</td>
-					<td colspan="2"><input type='text' name='stylesheet' style='width: 200px' value='<?php echo $options['stylesheet']; ?>' /></td>
-					</tr>
-					<tr>
-					<td colspan="2">Additional pages to load styles and scripts (Comma-Separated List of Page IDs)</td>
-					<td colspan="2"><input type='text' name='includestylescript' style='width: 200px' value='<?php echo $options['includestylescript']; ?>' /></td>
-					</tr>					
 					</table>
 					<br /><br />
 					<strong>Tooltip Configuration</strong>
@@ -695,10 +948,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					</table>
 					<p style="border:0;" class="submit"><input type="submit" name="submit" value="Update Settings &raquo;" /></p>
-				</form>
+					</form>
+					</fieldset>
 				<?php /* --------------------------------------- Categories --------------------------------- */ ?>
 				<?php elseif ($adminpage == "categories"): ?>
-				<a href="?page=weekly-schedule.php&amp;settings=general">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories"><strong>Manage Schedule Categories</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=items">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days">Manage Days Labels</a><br /><br />
+				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Schedule Categories</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
 				<div style='float:left;margin-right: 15px'>
 					<form name="wscatform" action="" method="post" id="ws-config">
 					<?php
@@ -710,6 +964,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<?php endif; ?>
 					Category Name: <input style="width:300px" type="text" name="name" <?php if ($mode == "edit") echo "value='" . $selectedcat->name . "'";?>/>
 					<input type="hidden" name="id" value="<?php if ($mode == "edit") echo $selectedcat->id; ?>" />
+					<input type="hidden" name="schedule" value="<?php echo $schedule; ?>" />
 					<?php if ($mode == "edit"): ?>
 						<p style="border:0;" class="submit"><input type="submit" name="updatecat" value="Update &raquo;" /></p>
 					<?php else: ?>
@@ -718,7 +973,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</form>
 				</div>
 				<div>
-					<?php $cats = $wpdb->get_results("SELECT count( i.id ) AS nbitems, c.name, c.id FROM " . $wpdb->prefix . "wscategories c LEFT JOIN " . $wpdb->prefix . "wsitems i ON i.category = c.id GROUP BY c.name");
+					<?php $cats = $wpdb->get_results("SELECT count( i.id ) AS nbitems, c.name, c.id, c.scheduleid FROM " . $wpdb->prefix . "wscategories c LEFT JOIN " . $wpdb->prefix . "wsitems i ON i.category = c.id WHERE c.scheduleid = " . $schedule . " GROUP BY c.name");
 					
 							if ($cats): ?>
 							  <table class='widefat' style='clear:none;width:400px;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
@@ -736,10 +991,10 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							  <?php foreach($cats as $cat): ?>
 								<tr>
 								<td class='name column-name' style='background: #FFF'><?php echo $cat->id; ?></td>
-								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;editcat=<?php echo $cat->id; ?>'><strong><?php echo $cat->name; ?></strong></a></td>
+								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;editcat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>'><strong><?php echo $cat->name; ?></strong></a></td>
 								<td style='background: #FFF;text-align:right'><?php echo $cat->nbitems; ?></td>
 								<?php if ($cat->nbitems == 0): ?>
-								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deletecat=<?php echo $cat->id; ?>' 
+								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deletecat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>' 
 								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete this category '%s'\n  'Cancel' to stop, 'OK' to delete."), $cat->name )) . "') ) { return true;}return false;\"" ?>><img src='<?php echo $wspluginpath; ?>/icons/delete.png' /></a></td>
 								<?php else: ?>
 								<td style='background: #FFF'></td>
@@ -756,16 +1011,18 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</div>
 				<?php /* --------------------------------------- Items --------------------------------- */ ?>
 				<?php elseif ($adminpage == "items"): ?>
-				<a href="?page=weekly-schedule.php&amp;settings=general">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items"><strong>Manage Schedule Items</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=days">Manage Days Labels</a><br /><br />
+				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Schedule Items</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
 				<div style='float:left;margin-right: 15px;width: 500px;'>
 					<form name="wsitemsform" action="" method="post" id="ws-config">
 					<?php
 					if ( function_exists('wp_nonce_field') )
 						wp_nonce_field('wspp-config');
 					?>
+					
 					<input type="hidden" name="id" value="<?php if ($mode == "edit") echo $selecteditem->id; ?>" />
 					<input type="hidden" name="oldrow" value="<?php if ($mode == "edit") echo $selecteditem->row; ?>" />
 					<input type="hidden" name="oldday" value="<?php if ($mode == "edit") echo $selecteditem->day; ?>" />
+					<input type="hidden" name="schedule" value="<?php echo $schedule; ?>" />
 					<?php if ($mode == "edit"): ?>
 					<strong>Editing Item #<?php echo $selecteditem->id; ?></strong>
 					<?php endif; ?>
@@ -782,7 +1039,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Category</td>
 					<td><select style='width: 360px' name="category">
-					<?php $cats = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wscategories ORDER by name");
+					<?php $cats = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wscategories where scheduleid = " . $schedule . " ORDER by name");
 					
 						foreach ($cats as $cat)
 						{
@@ -805,7 +1062,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					<tr>
 					<td>Day</td><td><select style='width: 360px' name="day">
-					<?php $days = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wsdays ORDER by id");
+					<?php $days = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wsdays where scheduleid = " . $schedule . " ORDER by id");
 					
 						foreach ($days as $day)
 						{
@@ -839,8 +1096,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									else
 									{
 										$timeperiod = "pm";
-										if ($i == 12)
-											$hour = $i;
+										if ($i >= 12 && $i < 13)
+											$hour = floor($i);
 										else
 											$hour = floor($i) - 12;
 									}
@@ -891,7 +1148,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</form>
 				</div>
 				<div>
-				<?php $items = $wpdb->get_results("SELECT d.name as dayname, i.id, i.name, i.day, i.starttime FROM " . $wpdb->prefix . "wsitems as i, " . $wpdb->prefix . "wsdays as d WHERE i.day = d.id ORDER by day, starttime, name");
+				<?php $items = $wpdb->get_results("SELECT d.name as dayname, i.id, i.name, i.day, i.starttime FROM " . $wpdb->prefix . "wsitems as i, " . $wpdb->prefix . "wsdays as d WHERE i.day = d.id 
+								and i.scheduleid = " . $schedule . " and d.scheduleid = " . $_GET['schedule'] . " ORDER by day, starttime, name");
 					
 							if ($items): ?>
 							  <table class='widefat' style='clear:none;width:500px;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
@@ -910,7 +1168,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							  <?php foreach($items as $item): ?>
 								<tr>
 								<td class='name column-name' style='background: #FFF'><?php echo $item->id; ?></td>
-								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>'><strong><?php echo $item->name; ?></strong></a></td>
+								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo $item->name; ?></strong></a></td>
 								<td style='background: #FFF;text-align:right'><?php echo $item->dayname; ?></td>
 								<td style='background: #FFF;text-align:right'>
 								<?php 
@@ -947,7 +1205,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								else
 									echo $hour . ":" . $minutes . $timeperiod . "\n";
 								?></td>
-								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deleteitem=<?php echo $item->id; ?>' 
+								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deleteitem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>' 
 								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete the item '%s'\n  'Cancel' to stop, 'OK' to delete."), $item->name )) . "') ) { return true;}return false;\""; ?>><img src='<?php echo $wspluginpath; ?>/icons/delete.png' /></a></td>
 								</tr>
 							  <?php endforeach; ?>				
@@ -958,17 +1216,18 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</div>
 				<?php elseif ($adminpage == "days"): ?>
 				<div>
-					<a href="?page=weekly-schedule.php&amp;settings=general">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days"><strong>Manage Days Labels</strong></a><br /><br />
+					<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Days Labels</strong></a><br /><br />
 					<div>
 						<form name="wsdaysform" action="" method="post" id="ws-config">
 						<?php
 						if ( function_exists('wp_nonce_field') )
 							wp_nonce_field('wspp-config');
 							
-						$days = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsdays ORDER by id");
+						$days = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsdays WHERE scheduleid = " . $schedule . " ORDER by id");
 						
 						if ($days):
 						?>
+						<input type="hidden" name="schedule" value="<?php echo $schedule; ?>" />
 						<table>
 						<tr>
 						<th style='text-align:left'><strong>ID</strong></th><th style='text-align:left'><strong>Name</strong></th>
@@ -992,36 +1251,55 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			<?php
 		} // end config_page()
 
-		function restore_defaults() {
-			update_option('WS_PP',$options);
-		}
 	} // end class WS_Admin
 } //endif
 
 function get_wsdays(){	}
 
 function ws_library_func($atts) {
-	extract(shortcode_atts(array(	), $atts));
-	return ws_library();
+	extract(shortcode_atts(array(
+		'schedule' => ''
+	), $atts));
+	
+	if ($schedule == '')
+	{
+		$options = get_option('WS_PP1');
+		$schedule = 1;
+	}
+	else
+	{
+		$schedulename = 'WS_PP' . $schedule;
+		$options = get_option($schedulename);
 	}
 	
-function ws_library() {
-	global $wpdb;
+	if ($options == false)
+	{
+		return "Requested schedule (Schedule " . $schedule . ") is not available from Weekly Schedule<br />";
+	}
 	
-	$options = get_option('WS_PP');
+	return ws_library($schedule, $options['starttime'], $options['endtime'], $options['timedivision'], $options['layout'], $options['tooltipwidth'], $options['tooltiptarget'],
+					  $options['tooltippoint'], $options['tooltipcolorscheme'], $options['displaydescription'], $options['daylist'], $options['timeformat'],
+					  $options['adjusttooltipposition']);
+}
+
 	
-	$numberofcols = ($options['endtime'] - $options['starttime']) / $options['timedivision'];
+function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'rightMiddle',
+					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'cream', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
+					$adjusttooltipposition = true) {
+	global $wpdb;	
+	
+	$numberofcols = ($endtime - $starttime) / $timedivision;
 	$linktarget = "newwindow";
 	
 	$output = "<!-- Weekly Schedule Output -->\n";
 
-	$output .= "<div id='ws-schedule'>\n";
+	$output .= "<div class='ws-schedule' id='ws-schedule<?php echo $scheduleid; ?>'>\n";
 	
-	if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+	if ($layout == 'horizontal' || $layout == '')
 	{
 		$output .= "<table>\n";	
 	}
-	elseif ($options['layout'] == 'vertical')
+	elseif ($layout == 'vertical')
 	{
 		$output .= "<div class='verticalcolumn'>\n";
 		$output .= "<table class='verticalheader'>\n";
@@ -1031,30 +1309,30 @@ function ws_library() {
 
 	$output .= "<th class='rowheader'></th>";
 	
-	if ($options['layout'] == 'vertical')
+	if ($layout == 'vertical')
 	{
 		$output .= "</tr>\n";
 	}
 
-	for ($i = $options['starttime']; $i < $options['endtime']; $i += $options['timedivision'])	{
+	for ($i = $starttime; $i < $endtime; $i += $timedivision)	{
 
 		if (fmod($i, 1))
 			$minutes = "30";
 		else
 			$minutes = "";
 
-		if ($options['timeformat'] == "24hours" || $options['timeformat'] == "")
+		if ($timeformat == "24hours" || $timeformat == "")
 		{
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 				$output .= "<tr class='datarow'>";
 			
 			$output .= "<th>" .  floor($i) . "h" . $minutes . "</th>";
 			
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 				$output .= "</tr>\n";
 			
 		}
-		else if ($options['timeformat'] == "12hours")
+		else if ($timeformat == "12hours")
 		{
 			if ($i < 12)
 			{
@@ -1073,7 +1351,7 @@ function ws_library() {
 					$hour = floor($i) - 12;
 			}
 			
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 				$output .= "<tr class='datarow'>";
 			
 			$output .= "<th>" . $hour;
@@ -1081,24 +1359,24 @@ function ws_library() {
 				$output .= ":" . $minutes;
 			$output .=  $timeperiod . "</th>";			
 			
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 				$output .= "</tr>\n";
 		}
 	}
 
-	if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+	if ($layout == 'horizontal' || $layout == '')
 		$output .= "</tr>\n";
-	elseif ($options['layout'] == 'vertical')
+	elseif ($layout == 'vertical')
 	{
 		$output .= "</table>\n";
 		$output .= "</div>\n";
 	}
 
 
- 	$sqldays = "SELECT * from " .  $wpdb->prefix . "wsdays";
+ 	$sqldays = "SELECT * from " .  $wpdb->prefix . "wsdays where scheduleid = " . $scheduleid;
 	
-	if ($options['daylist'] != "")
-		$sqldays .= " WHERE id in (" . $options['daylist'] . ") ORDER BY FIELD(id, " . $options['daylist']. ")";
+	if ($daylist != "")
+		$sqldays .= " AND id in (" . $daylist . ") ORDER BY FIELD(id, " . $daylist. ")";
 		
 	$daysoftheweek = $wpdb->get_results($sqldays);
 
@@ -1107,26 +1385,26 @@ function ws_library() {
 		for ($daysrow = 1; $daysrow <= $day->rows; $daysrow++)
 		{
 			$columns = $numberofcols;
-			$time = $options['starttime'];
+			$time = $starttime;
 			
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 			{
 				$output .= "<div class='verticalcolumn'>\n";
 				$output .= "<table class='vertical'>\n";
 				$output .= "<tr class='vertrow'>";
 			}
-			elseif ($options['layout'] == 'horizontal' || $options['layout'] == '')
+			elseif ($layout == 'horizontal' || $layout == '')
 			{
 				$output .= "<tr class='row" . $day->rows . "'>\n";
 			}
 
-			if ($daysrow == 1 && ($options['layout'] == 'horizontal' || $options['layout'] == ''))
+			if ($daysrow == 1 && ($layout == 'horizontal' || $layout == ''))
 				$output .= "<th rowspan='" . $day->rows . "' class='rowheader'>" . $day->name . "</th>\n";
-			if ($daysrow == 1 && $options['layout'] == 'vertical' && $day->rows == 1)
+			if ($daysrow == 1 && $layout == 'vertical' && $day->rows == 1)
 				$output .= "<th class='rowheader'>" . $day->name . "</th>\n";
-			if ($daysrow == 1 && $options['layout'] == 'vertical' && $day->rows > 1)
+			if ($daysrow == 1 && $layout == 'vertical' && $day->rows > 1)
 				$output .= "<th class='rowheader'>&laquo; " . $day->name . "</th>\n";				
-			elseif ($daysrow != 1 && $options['layout'] == 'vertical')
+			elseif ($daysrow != 1 && $layout == 'vertical')
 			{
 				if ($daysrow == $day->rows)
 					$output .= "<th class='rowheader'>" . $day->name . " &raquo;</th>\n";
@@ -1134,13 +1412,13 @@ function ws_library() {
 					$output .= "<th class='rowheader'>&laquo; " . $day->name . " &raquo;</th>\n";
 			}
 				
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 				$output .= "</tr>\n";
 
 			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . $wpdb->prefix . 
 						"wsitems i, " . $wpdb->prefix . "wscategories c WHERE day = " . $day->id . 			
-						" AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $options['starttime'] . " AND i.starttime < " .
-						$options['endtime'] . " ORDER by starttime";
+						" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
+						$endtime . " ORDER by starttime";
 
 			$items = $wpdb->get_results($sqlitems);
 
@@ -1148,30 +1426,30 @@ function ws_library() {
 			{
 				foreach($items as $item)
 				{
-					for ($i = $time; $i < $item->starttime; $i += $options['timedivision'])
+					for ($i = $time; $i < $item->starttime; $i += $timedivision)
 					{
-						if ($options['layout'] == 'vertical')
+						if ($layout == 'vertical')
 							$output .= "<tr class='datarow'>\n";
 							
 						$output .= "<td></td>\n";
 						
-						if ($options['layout'] == 'vertical')
+						if ($layout == 'vertical')
 							$output .= "</tr>\n";
 						
 						$columns -= 1;
 
 					}
 					
-					$colspan = $item->duration / $options['timedivision'];
+					$colspan = $item->duration / $timedivision;
 					
 					if ($colspan > $columns)
 					{
 						$colspan = $columns;
 						$columns -= $columns;
 						
-						if ($options['layout'] == 'horizontal')
+						if ($layout == 'horizontal')
 							$continue .= "id='continueright' ";
-						elseif ($options['layout'] == 'vertical')
+						elseif ($layout == 'vertical')
 							$continue .= "id='continuedown' ";
 					}
 					else
@@ -1180,17 +1458,17 @@ function ws_library() {
 						$continue = "";
 					}	
 					
-					if ($options['layout'] == 'vertical')
+					if ($layout == 'vertical')
 							$output .= "<tr class='datarow" . $colspan . "'>";
 					
 					$output .= "<td ";
 					
-					if ($options['displaydescription'] == "tooltip" && $item->description != "")
+					if ($displaydescription == "tooltip" && $item->description != "")
 						$output .= "tooltip='" . htmlspecialchars(stripslashes($item->description),  ENT_QUOTES) . "' ";
 					
 					$output .= $continue;
 					
-					if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+					if ($layout == 'horizontal' || $layout == '')
 						$output .= "colspan='" . $colspan . "' ";
 					
 					$output .= "class='cat" . $item->catid . "'>";
@@ -1203,13 +1481,13 @@ function ws_library() {
 					if ($item->address != "")
 						"</a>";
 						
-					if ($options['displaydescription'] == "cell")
+					if ($displaydescription == "cell")
 						$output .= "<br />" .  stripslashes($item->description);
 						
 					$output .= "</td>";
 					$time = $item->starttime + $item->duration;
 					
-					if ($options['layout'] == 'vertical')
+					if ($layout == 'vertical')
 						$output .= "</tr>\n";
 					
 				}
@@ -1217,34 +1495,34 @@ function ws_library() {
 				for ($x = $columns; $x > 0; $x--)
 				{
 				
-					if ($options['layout'] == 'vertical')
+					if ($layout == 'vertical')
 							$output .= "<tr class='datarow'>";
 					
 					$output .= "<td></td>";
 					$columns -= 1;
 					
-					if ($options['layout'] == 'vertical')
+					if ($layout == 'vertical')
 							$output .= "</tr>";
 				}
 			}
 			else
 			{
-				for ($i = $options['starttime']; $i < $options['endtime']; $i += $options['timedivision'])
+				for ($i = $starttime; $i < $endtime; $i += $timedivision)
 				{
-					if ($options['layout'] == 'vertical')
+					if ($layout == 'vertical')
 							$output .= "<tr class='datarow'>";
 							
 					$output .= "<td></td>";
 					
-					if ($options['layout'] == 'vertical')
+					if ($layout == 'vertical')
 							$output .= "</tr>";
 				}
 			}
 
-			if ($options['layout'] == 'horizontal' || $options['layout'] == '')
+			if ($layout == 'horizontal' || $layout == '')
 				$output .= "</tr>";
 			
-			if ($options['layout'] == 'vertical')
+			if ($layout == 'vertical')
 			{
 				$output .= "</table>\n";
 				$output .= "</div>\n";
@@ -1256,7 +1534,7 @@ function ws_library() {
 
 	$output .= "</div id='ws-schedule'>\n";
 	
-	if ($options['displaydescription'] == "tooltip")
+	if ($displaydescription == "tooltip")
 	{
 		$output .= "<script type=\"text/javascript\">\n";
 		$output .= "// Create the tooltips only on document load\n";	
@@ -1264,20 +1542,20 @@ function ws_library() {
 		$output .= "jQuery(document).ready(function()\n";
 		$output .= "\t{\n";
 		$output .= "\t// Notice the use of the each() method to acquire access to each elements attributes\n";
-		$output .= "\tjQuery('#ws-schedule td[tooltip]').each(function()\n";
+		$output .= "\tjQuery('.ws-schedule td[tooltip]').each(function()\n";
 		$output .= "\t\t{\n";
 		$output .= "\t\tjQuery(this).qtip({\n";
 		$output .= "\t\t\tcontent: jQuery(this).attr('tooltip'), // Use the tooltip attribute of the element for the content\n";
 		$output .= "\t\t\tstyle: {\n";
-		$output .= "\t\t\t\twidth: " . $options['tooltipwidth'] . ",\n";
-		$output .= "\t\t\t\tname: '" . $options['tooltipcolorscheme'] . "', // Give it a crea mstyle to make it stand out\n";
+		$output .= "\t\t\t\twidth: " . $tooltipwidth . ",\n";
+		$output .= "\t\t\t\tname: '" . $tooltipcolorscheme . "', // Give it a crea mstyle to make it stand out\n";
 		$output .= "\t\t\t},\n";
 		$output .= "\t\t\tposition: {\n";
-		if ($options['adjusttooltipposition'])
+		if ($adjusttooltipposition)
 			$output .= "\t\t\t\tadjust: {screen: true},\n";
 		$output .= "\t\t\t\tcorner: {\n";
-		$output .= "\t\t\t\t\ttarget: '" . $options['tooltiptarget'] . "',\n";
-		$output .= "\t\t\t\t\ttooltip: '" . $options['tooltippoint'] . "'\n";
+		$output .= "\t\t\t\t\ttarget: '" . $tooltiptarget . "',\n";
+		$output .= "\t\t\t\t\ttooltip: '" . $tooltippoint . "'\n";
 		$output .= "\t\t\t\t}\n";
 		$output .= "\t\t\t}\n";
 		$output .= "\t\t});\n";
@@ -1307,61 +1585,82 @@ function ws_conditionally_add_scripts_and_styles($posts){
 	$load_qtip = false;
 	$load_style = false;
 	
-	$options = get_option('WS_PP');
+	$genoptions = get_option('WeeklyScheduleGeneral');
 
-	if (is_admin()) 
-	{
-		$load_jquery = true;
-		$load_qtip = true;
-		$load_style = false;
-	}
-	else
-	{
-		foreach ($posts as $post) {		
+	foreach ($posts as $post) {		
 			$continuesearch = true;
 			$searchpos = 0;
-			$settingsetids = array();
+			$scheduleids = array();
 			
 			while ($continuesearch) 
 			{
-				$weeklyschedulepos = stripos($post->post_content, 'weekly-schedule', $searchpos);
+				$weeklyschedulepos = stripos($post->post_content, 'weekly-schedule ', $searchpos);
+				if ($weeklyschedulepos == false)
+				{
+					$weeklyschedulepos = stripos($post->post_content, 'weekly-schedule]', $searchpos);
+				}
 				$continuesearch = $weeklyschedulepos;
-
-				if ($weeklyschedulepos)
+				if ($continuesearch)
 				{
 					$load_style = true;
-					$shortcodeend = stripos($post->post_content, ']', $linklibrarypos);
-					$searchpos = $shortcodeend;
-					
-					if ($options['displaydescription'] == "tooltip")
+					$shortcodeend = stripos($post->post_content, ']', $weeklyschedulepos);
+					if ($shortcodeend)
+						$searchpos = $shortcodeend;
+					else
+						$searchpos = $weeklyschedulepos + 1;
+						
+					if ($shortcodeend)
 					{
-						$load_jquery = true;
-						$load_qtip = true;
-					}						
+						$settingconfigpos = stripos($post->post_content, 'settings=', $weeklyschedulepos);
+						if ($settingconfigpos && $settingconfigpos < $shortcodeend)
+						{
+							$schedule = substr($post->post_content, $settingconfigpos + 9, $shortcodeend - $settingconfigpos - 9);
+								
+							$scheduleids[] = $schedule;
+						}
+						else if (count($scheduleids) == 0)
+						{
+							$scheduleids[] = 1;
+						}
+					}
 				}	
 			}
 		}
-					
-		if ($options['includestylescript'] != '')
+		
+		if ($scheduleids)
 		{
-			$pagelist = explode (',', $options['includestylescript']);
+			foreach ($scheduleids as $scheduleid)
+			{
+				$schedulename = 'WS_PP' . $scheduleid;
+				$options = get_option($schedulename);			
+				
+				if ($options['displaydescription'] == "tooltip")
+				{
+					$load_jquery = true;
+					$load_qtip = true;
+				}					
+			}
+		}
+			
+		if ($genoptions['includescriptcss'] != '')
+		{
+			$pagelist = explode (',', $genoptions['includescriptcss']);
 			foreach($pagelist as $pageid) {
 				if (is_page($pageid))
 				{
 					$load_jquery = true;
-					$load_qtip = true;
 					$load_style = true;
+					$load_qtip = true;				
 				}
 			}
 		}
-	}
 	
 	if ($load_style)
 	{		
-		if ($options == "")
-			$options['stylesheet'] = 'stylesheet.css';
+		if ($genoptions == "")
+			$genoptions['stylesheet'] = 'stylesheet.css';
 			
-		wp_enqueue_style('weeklyschedulestyle', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/' . $options['stylesheet']);	
+		wp_enqueue_style('weeklyschedulestyle', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/' . $genoptions['stylesheet']);	
 	}
  
 	if ($load_jquery)
