@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.0.2
+Version: 2.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -274,15 +274,33 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				if ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "1.0")
 				{
-					$items = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) <> 0");
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
 					
-					if ($items)
+					if ($itemsquarterhour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to hourly since some items have quarter-hourly durations</strong></div>';
+						$options['timedivision'] = "0.25";
+					}
+					elseif ($itemshalfhour)
 					{
 						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to hourly since some items have half-hourly durations</strong></div>';
 						$options['timedivision'] = "0.5";
 					}
 					else
 						$options['timedivision'] = $_POST['timedivision'];					
+				}
+				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "0.5")
+				{
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
+					
+					if ($itemsquarterhour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to hourly since some items have quarter-hourly durations</strong></div>';
+						$options['timedivision'] = "0.25";
+					}
+					else
+						$options['timedivision'] = $_POST['timedivision'];				
 				}
 				else
 					$options['timedivision'] = $_POST['timedivision'];
@@ -759,7 +777,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Start Time</td>
 					<td><select style='width: 200px' name="starttime">
-					<?php for ($i = 0; $i < 24.5; $i+= 0.5)
+					<?php $maxtime = 24 + $options['timedivision']; for ($i = 0; $i < $maxtime; $i+= $options['timedivision'])
 						  {
 								if ($options['timeformat'] == '24hours')
 									$hour = floor($i);
@@ -782,11 +800,16 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 											$hour = floor($i) - 12;
 									}
 								}
-								
-								if (fmod($i, 1))
+							
+								if (fmod($i, 1) == 0.25)
+                                    $minutes = "15";
+								elseif (fmod($i, 1) == 0.50)
 									$minutes = "30";
-								else
-									$minutes = "00";
+								elseif (fmod($i, 1) == 0.75)
+									$minutes = "45";
+                                else
+                                    $minutes = "00";
+
 									
 								if ($i == $options['starttime']) 
 									$selectedstring = "selected='selected'";
@@ -802,7 +825,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</select></td>
 					<td>End Time</td>
 					<td><select style='width: 200px' name="endtime">
-					<?php for ($i = 0; $i < 24.5; $i+= 0.5)
+					<?php for ($i = 0; $i < $maxtime; $i+= $options['timedivision'])
 						  {
 						  		if ($options['timeformat'] == '24hours')
 									$hour = floor($i);
@@ -826,11 +849,17 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									}
 								}
 								
-								if (fmod($i, 1))
+								if (fmod($i, 1) == 0.25)
+                                    $minutes = "15";
+								elseif (fmod($i, 1) == 0.50)
 									$minutes = "30";
-								else
-									$minutes = "00";
+								elseif (fmod($i, 1) == 0.75)
+									$minutes = "45";
+                                else
+                                    $minutes = "00";
+
 									
+								
 								if ($i == $options['endtime']) 
 									$selectedstring = "selected='selected'";
 								else
@@ -846,8 +875,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					<tr>
 					<td>Cell Time Division</td>
-					<td><select style='width: 200px' name='timedivision'>
-					<?php $timedivisions = array("0.5" => "Half-Hourly", "1.0" => "Hourly");
+					<td><select style='width: 250px' name='timedivision'>
+					<?php $timedivisions = array("0.25" => "Quarter-Hourly (15 min intervals)", ".50" => "Half-Hourly (30 min intervals)", "1.0" => "Hourly (60 min intervals)");
 						foreach($timedivisions as $key => $timedivision)
 						{
 							if ($key == $options['timedivision'])
@@ -1104,10 +1133,15 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									}
 								}
 									
-								if (fmod($i, 1))
+								
+								if (fmod($i, 1) == 0.25)
+                                    $minutes = "15";
+								elseif (fmod($i, 1) == 0.50)
 									$minutes = "30";
-								else
-									$minutes = "00";
+								elseif (fmod($i, 1) == 0.75)
+									$minutes = "45";
+                                else
+                                    $minutes = "00";
 									
  								if ($i == $selecteditem->starttime)
 									$selectedstring = "selected='selected'";
@@ -1126,10 +1160,14 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<td><select style='width: 360px' name="duration">
 					<?php for ($i = $options['timedivision']; $i <= ($options['endtime'] - $options['starttime']); $i += $options['timedivision'])
 						  {
-								if (fmod($i, 1))
+								if (fmod($i, 1) == 0.25)
+                                    $minutes = "15";
+								elseif (fmod($i, 1) == 0.50)
 									$minutes = "30";
-								else
-									$minutes = "00";
+								elseif (fmod($i, 1) == 0.75)
+									$minutes = "45";
+                                else
+                                    $minutes = "00";
 									
  								if ($i == $selecteditem->duration) 
 									$selectedstring = "selected='selected'";
@@ -1195,11 +1233,15 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 											$hour = floor($item->starttime) - 12;
 									}
 								}
-									
-								if (fmod($item->starttime, 1))
+								
+								if (fmod($i, 1) == 0.25)
+                                    $minutes = "15";
+								elseif (fmod($i, 1) == 0.50)
 									$minutes = "30";
-								else
-									$minutes = "00";
+								elseif (fmod($i, 1) == 0.75)
+									$minutes = "45";
+                                else
+                                    $minutes = "00";
 																	
 								if ($options['timeformat'] == '24 hours')
 									echo $hour . "h" . $minutes . "\n";
@@ -1316,11 +1358,16 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 	}
 
 	for ($i = $starttime; $i < $endtime; $i += $timedivision)	{
+	
+	if (fmod($i, 1) == 0.25)
+		$minutes = "15";
+	elseif (fmod($i, 1) == 0.50)
+		$minutes = "30";
+	elseif (fmod($i, 1) == 0.75)
+		$minutes = "45";
+	else
+		$minutes = "";
 
-		if (fmod($i, 1))
-			$minutes = "30";
-		else
-			$minutes = "";
 
 		if ($timeformat == "24hours" || $timeformat == "")
 		{

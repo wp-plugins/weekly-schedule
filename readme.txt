@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.1 =
+* Added: Ability to set time division to 15 minutes (Thanks to Matt Bryers for suggestion and initial ground work)
+
 = 2.0.2 =
 * Added reference links at top of admin page
 

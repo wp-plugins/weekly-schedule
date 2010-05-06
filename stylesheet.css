@@ -12,6 +12,7 @@
 	}
 .ws-schedule .verticalcolumn {
 	float: left;
+	width: 80px;
 }
 .ws-schedule table.verticalheader {
 	width: 100px;
@@ -49,25 +50,25 @@
 	height: 70px;
 }
 .ws-schedule tr.datarow2 {
-	height: 142px;
+	height: 140px;
 }
 .ws-schedule tr.datarow3 {
-	height: 214px;
+	height: 210px;
 }
 .ws-schedule tr.datarow4 {
-	height: 288px;
+	height: 280px;
 }
 .ws-schedule tr.datarow5 {
-	height: 360px;
+	height: 350px;
 }
 .ws-schedule tr.datarow6 {
-	height: 432px;
+	height: 420px;
 }
 .ws-schedule tr.datarow7 {
-	height: 504px;
+	height: 490px;
 }
 .ws-schedule tr.datarow8 {
-	height: 576px;
+	height: 560px;
 }
 .ws-schedule tr.vertrow {
 	width: 50px;
