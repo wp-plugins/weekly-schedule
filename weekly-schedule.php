@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.1.1
+Version: 2.1.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -205,8 +205,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			if ( !defined('WP_ADMIN_URL') )
 				define( 'WP_ADMIN_URL', get_option('siteurl') . '/wp-admin');
 			
-			if ( isset($_GET['schedule'])) {
+			if ( isset($_GET['schedule']) ) {
 				$schedule = $_GET['schedule'];				
+			}
+			elseif (isset($_POST['schedule'])) {
+				$schedule = $_POST['schedule'];
 			}
 			else
 			{
@@ -743,6 +746,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					?>
 					Schedule Name: <input type="text" id="schedulename" name="schedulename" size="80" value="<?php echo $options['schedulename']; ?>"/><br /><br />
 					<strong>Time-related Settings</strong><br />
+					<input type="hidden" name="schedule" value="<?php echo $schedule; ?>" />
 					<table>
 					<tr>
 					<td>Schedule Layout</td>
