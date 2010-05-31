@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.2 =
+* Updated qTip plugin for compatibility with Wordpress 3.0
+
 = 2.1.2 =
 * Fixed: Could not save general settings for schedules other than #1.
 
