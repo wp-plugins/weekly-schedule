@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.2.1 =
+* Added support for 2-hour and 3-hour time divisions
+
 = 2.2 =
 * Updated qTip plugin for compatibility with Wordpress 3.0
 

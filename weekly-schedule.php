@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.2
+Version: 2.2.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -79,7 +79,7 @@ function ws_install() {
 			(1, 'Sun', 1, 1),
 			(2, 'Mon', 1, 1),
 			(3, 'Tue', 1, 1),
-			(4, 'Wes', 1, 1),
+			(4, 'Wed', 1, 1),
 			(5, 'Thu', 1, 1),
 			(6, 'Fri', 1, 1),
 			(7, 'Sat', 1, 1)");
@@ -275,7 +275,61 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
 				check_admin_referer('wspp-config');
 				
-				if ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "1.0")
+				if ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "3.0")
+				{
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
+					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0");
+					$itemstwohour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 2.0");
+					
+					if ($itemsquarterhour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to tri-hourly since some items have quarter-hourly durations</strong></div>';
+						$options['timedivision'] = "0.25";
+					}
+					elseif ($itemshalfhour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to tri-hourly since some items have half-hourly durations</strong></div>';
+						$options['timedivision'] = "0.5";
+					}
+					elseif ($itemshour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to tri-hourly since some items have hourly durations</strong></div>';
+						$options['timedivision'] = "1.0";
+					}
+					elseif ($itemstwohour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to tri-hourly since some items have hourly durations</strong></div>';
+						$options['timedivision'] = "2.0";
+					}
+					else
+						$options['timedivision'] = $_POST['timedivision'];					
+				}
+				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "2.0")
+				{
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
+					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0");
+					
+					if ($itemsquarterhour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to bi-hourly since some items have quarter-hourly durations</strong></div>';
+						$options['timedivision'] = "0.25";
+					}
+					elseif ($itemshalfhour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to bi-hourly since some items have half-hourly durations</strong></div>';
+						$options['timedivision'] = "0.5";
+					}
+					elseif ($itemshour)
+					{
+						echo '<div id="warning" class="updated fade"><p><strong>Cannot change time division to bi-hourly since some items have hourly durations</strong></div>';
+						$options['timedivision'] = "1.0";
+					}
+					else
+						$options['timedivision'] = $_POST['timedivision'];					
+				}
+				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "1.0")
 				{
 					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
 					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
@@ -781,7 +835,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Start Time</td>
 					<td><select style='width: 200px' name="starttime">
-					<?php $maxtime = 24 + $options['timedivision']; for ($i = 0; $i < $maxtime; $i+= $options['timedivision'])
+					<?php $timedivider = (in_array($options['timedivision'], array('1.0', '2.0', '3.0')) ? '1.0': $options['timedivision']); 
+						  $maxtime = 24 + $timedivider; for ($i = 0; $i < $maxtime; $i+= $timedivider)
 						  {
 								if ($options['timeformat'] == '24hours')
 									$hour = floor($i);
@@ -829,7 +884,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</select></td>
 					<td>End Time</td>
 					<td><select style='width: 200px' name="endtime">
-					<?php for ($i = 0; $i < $maxtime; $i+= $options['timedivision'])
+					<?php for ($i = 0; $i < $maxtime; $i+= $timedivider)
 						  {
 						  		if ($options['timeformat'] == '24hours')
 									$hour = floor($i);
@@ -880,7 +935,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Cell Time Division</td>
 					<td><select style='width: 250px' name='timedivision'>
-					<?php $timedivisions = array("0.25" => "Quarter-Hourly (15 min intervals)", ".50" => "Half-Hourly (30 min intervals)", "1.0" => "Hourly (60 min intervals)");
+					<?php $timedivisions = array("0.25" => "Quarter-Hourly (15 min intervals)",
+												 ".50" => "Half-Hourly (30 min intervals)",
+												 "1.0" => "Hourly (60 min intervals)",
+												 "2.0" => "Bi-Hourly (120 min intervals)",
+												 "3.0" => "Tri-Hourly (180 min intervals)");
 						foreach($timedivisions as $key => $timedivision)
 						{
 							if ($key == $options['timedivision'])
@@ -1113,7 +1172,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Start Time</td>
 					<td><select style='width: 360px' name="starttime">
-					<?php for ($i = $options['starttime']; $i < $options['endtime']; $i+= $options['timedivision'])
+					<?php for ($i = $options['starttime']; $i < $options['endtime']; $i += $options['timedivision'])
 						  {
 						  		if ($options['timeformat'] == '24hours')
 									$hour = floor($i);
