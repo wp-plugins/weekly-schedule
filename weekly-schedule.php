@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.2.2
+Version: 2.2.3
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -1425,7 +1425,7 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 	
 	$output = "<!-- Weekly Schedule Output -->\n";
 
-	$output .= "<div class='ws-schedule' id='ws-schedule<?php echo $scheduleid; ?>'>\n";
+	$output .= "<div class='ws-schedule' id='ws-schedule" . $scheduleid . "'>\n";
 	
 	if ($layout == 'horizontal' || $layout == '')
 	{
@@ -1666,10 +1666,11 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 			}
 		}
 	}
+	
+	if ($layout == 'horizontal' || $layout == '')
+		$output .= "</table>";
 
-	$output .= "</table>";
-
-	$output .= "</div id='ws-schedule'>\n";
+	$output .= "</div>\n";
 	
 	if ($displaydescription == "tooltip")
 	{

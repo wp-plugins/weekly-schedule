@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.2.3 =
+* Minor change fixes
+
 = 2.2.2 =
 * fixed problem preventing popup description display in IE 6/7
 
