@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.2.1
+Version: 2.2.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -1388,6 +1388,32 @@ function ws_library_func($atts) {
 					  $options['adjusttooltipposition']);
 }
 
+function ws_library_flat_func($atts) {
+	extract(shortcode_atts(array(
+		'schedule' => ''
+	), $atts));
+	
+	if ($schedule == '')
+	{
+		$options = get_option('WS_PP1');
+		$schedule = 1;
+	}
+	else
+	{
+		$schedulename = 'WS_PP' . $schedule;
+		$options = get_option($schedulename);
+	}
+	
+	if ($options == false)
+	{
+		return "Requested schedule (Schedule " . $schedule . ") is not available from Weekly Schedule<br />";
+	}
+	
+	return ws_library_flat($schedule, $options['starttime'], $options['endtime'], $options['timedivision'], $options['layout'], $options['tooltipwidth'], $options['tooltiptarget'],
+					  $options['tooltippoint'], $options['tooltipcolorscheme'], $options['displaydescription'], $options['daylist'], $options['timeformat'],
+					  $options['adjusttooltipposition']);
+}
+
 	
 function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'rightMiddle',
 					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'cream', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
@@ -1659,7 +1685,7 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 		$output .= "\t\t\tcontent: jQuery(this).attr('tooltip'), // Use the tooltip attribute of the element for the content\n";
 		$output .= "\t\t\tstyle: {\n";
 		$output .= "\t\t\t\twidth: " . $tooltipwidth . ",\n";
-		$output .= "\t\t\t\tname: '" . $tooltipcolorscheme . "', // Give it a crea mstyle to make it stand out\n";
+		$output .= "\t\t\t\tname: '" . $tooltipcolorscheme . "' // Give it a crea mstyle to make it stand out\n";
 		$output .= "\t\t\t},\n";
 		$output .= "\t\t\tposition: {\n";
 		if ($adjusttooltipposition)
@@ -1680,12 +1706,157 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
  	return $output;
 }
 
+function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'rightMiddle',
+					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'cream', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
+					$adjusttooltipposition = true) {
+	global $wpdb;	
+	
+	$linktarget = "newwindow";
+	
+	$output = "<!-- Weekly Schedule Flat Output -->\n";
+
+	$output .= "<div class='ws-schedule' id='ws-schedule<?php echo $scheduleid; ?>'>\n";
+		
+ 	$sqldays = "SELECT * from " .  $wpdb->prefix . "wsdays where scheduleid = " . $scheduleid;
+	
+	if ($daylist != "")
+		$sqldays .= " AND id in (" . $daylist . ") ORDER BY FIELD(id, " . $daylist. ")";
+		
+	$daysoftheweek = $wpdb->get_results($sqldays);
+	
+	$output .= "<table>\n";	
+
+	foreach ($daysoftheweek as $day)
+	{
+		for ($daysrow = 1; $daysrow <= $day->rows; $daysrow++)
+		{
+			$output .= "<tr><td colspan='3'>" . $day->name . "</td></tr>\n";
+		
+			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . $wpdb->prefix . 
+						"wsitems i, " . $wpdb->prefix . "wscategories c WHERE day = " . $day->id . 			
+						" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
+						$endtime . " ORDER by starttime";
+
+			$items = $wpdb->get_results($sqlitems);
+
+			if ($items)
+			{
+				foreach($items as $item)
+				{
+				
+					$output .= "<tr>\n";
+					
+					if ($timeformat == '24hours')
+						$hour = floor($item->starttime);
+					elseif ($options['timeformat'] == '12hours')
+					{
+						if ($item->starttime < 12)
+						{
+							$timeperiod = "am";
+							if ($item->starttime == 0)
+								$hour = 12;
+							else
+								$hour = floor($item->starttime);
+						}
+						else
+						{
+							$timeperiod = "pm";
+							if ($item->starttime == 12)
+								$hour = $item->starttime;
+							else
+								$hour = floor($item->starttime) - 12;
+						}
+					}
+					
+					if (fmod($item->starttime, 1) == 0.25)
+						$minutes = "15";
+					elseif (fmod($item->starttime, 1) == 0.50)
+						$minutes = "30";
+					elseif (fmod($item->starttime, 1) == 0.75)
+						$minutes = "45";
+					else
+						$minutes = "00";
+														
+					if ($options['timeformat'] == '24 hours')
+						$output .= "<td>" . $hour . "h" . $minutes . " - ";
+					else
+						$output .= "<td>" . $hour . ":" . $minutes . $timeperiod . " - ";
+						
+					$endtime = $item->starttime + $item->duration;
+					
+					if ($timeformat == '24hours')
+						$hour = floor($endtime);
+					elseif ($options['timeformat'] == '12hours')
+					{
+						if ($endtime < 12)
+						{
+							$timeperiod = "am";
+							if ($endtime == 0)
+								$hour = 12;
+							else
+								$hour = floor($endtime);
+						}
+						else
+						{
+							$timeperiod = "pm";
+							if ($endtime == 12)
+								$hour = $endtime;
+							else
+								$hour = floor($endtime) - 12;
+						}
+					}
+					
+					if (fmod($endtime, 1) == 0.25)
+						$minutes = "15";
+					elseif (fmod($endtime, 1) == 0.50)
+						$minutes = "30";
+					elseif (fmod($endtime, 1) == 0.75)
+						$minutes = "45";
+					else
+						$minutes = "00";
+														
+					if ($options['timeformat'] == '24 hours')
+						$output .= $hour . "h" . $minutes . "</td>";
+					else
+						$output .= $hour . ":" . $minutes . $timeperiod . "</td>";
+						
+					$output .= "<td>\n";
+						
+					if ($item->address != "")
+						$output .= "<a target='" . $linktarget . "'href='" . $item->address. "'>";
+						
+					$output .= $item->itemname;
+										
+					if ($item->address != "")
+						"</a>";
+						
+					$output .= "</td>";
+
+					$output .= "<td>" . htmlspecialchars(stripslashes($item->description),  ENT_QUOTES) . "</td>";
+					
+					$output .= "</tr>";					
+				}
+			}
+		}
+	}
+
+	$output .= "</table>";
+
+	$output .= "</div id='ws-schedule'>\n";
+		
+	$output .= "<!-- End of Weekly Schedule Flat Output -->\n";
+
+ 	return $output;
+}
+
 $version = "1.0";
 
 // adds the menu item to the admin interface
 add_action('admin_menu', array('WS_Admin','add_config_page'));
 
 add_shortcode('weekly-schedule', 'ws_library_func');
+
+add_shortcode('flat-weekly-schedule', 'ws_library_flat_func');
 
 add_filter('the_posts', 'ws_conditionally_add_scripts_and_styles'); // the_posts gets triggered before wp_head
 
