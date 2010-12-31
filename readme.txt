@@ -26,6 +26,12 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.2.5 =
+* Add option to specify the link target (window) where links will be opened. Was previously hard-coded to new window.
+
+= 2.2.4 =
+* Added option to add stylesheet and scripts to front page header
+
 = 2.2.3 =
 * Minor change fixes
 

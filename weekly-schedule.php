@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.2.3
+Version: 2.2.5
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -133,6 +133,7 @@ function ws_install() {
 			$genoptions['numberschedules'] = 2;
 			$genoptions['debugmode'] = false;
 			$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
+			$genoptions['frontpagestylescript'] = false;
 			$genoptions['version'] = "2.0";
 		
 			update_option('WeeklyScheduleGeneral', $genoptions);		
@@ -155,6 +156,7 @@ function ws_install() {
 		$options['layout'] = 'horizontal';
 		$options['adjusttooltipposition'] = true;
 		$options['schedulename'] = "Default";
+		$options['linktarget'] = "newwindow";
 		
 		update_option('WS_PP1',$options);
 	}
@@ -166,6 +168,7 @@ function ws_install() {
 		$genoptions['numberschedules'] = 2;
 		$genoptions['debugmode'] = false;
 		$genoptions['includestylescript'] = "";
+		$genoptions['frontpagestylescript'] = false;
 		$genoptions['version'] = "2.0";
 		
 		update_option("WeeklyScheduleGeneral", $genoptions);
@@ -245,6 +248,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$options['layout'] = 'horizontal';
 				$options['adjusttooltipposition'] = true;
 				$options['schedulename'] = "Default";
+				$options['linktarget'] = "newwindow";
 			
 				$schedule = $_GET['reset'];
 				$schedulename = 'WS_PP' . $schedule;
@@ -363,7 +367,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$options['timedivision'] = $_POST['timedivision'];
 
 				foreach (array('starttime','endtime','tooltipwidth','tooltiptarget','tooltippoint','tooltipcolorscheme',
-						'displaydescription','daylist', 'timeformat', 'layout', 'schedulename') as $option_name) {
+						'displaydescription','daylist', 'timeformat', 'layout', 'schedulename', 'linktarget') as $option_name) {
 						if (isset($_POST[$option_name])) {
 							$options[$option_name] = $_POST[$option_name];
 						}
@@ -388,13 +392,13 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
 				check_admin_referer('wspp-config');
 				
-				foreach (array('stylesheet', 'numberschedules') as $option_name) {
+				foreach (array('stylesheet', 'numberschedules', 'includestylescript') as $option_name) {
 					if (isset($_POST[$option_name])) {
 						$genoptions[$option_name] = $_POST[$option_name];
 					}
 				}
 				
-				foreach (array('debugmode') as $option_name) {
+				foreach (array('debugmode', 'frontpagestylescript') as $option_name) {
 					if (isset($_POST[$option_name])) {
 						$genoptions[$option_name] = true;
 					} else {
@@ -660,6 +664,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$options['layout'] = 'horizontal';
 				$options['adjusttooltipposition'] = true;
 				$options['schedulename'] = "Default";
+				$options['linktarget'] = "newwindow";
 			
 				$schedulename = 'WS_PP' . $schedule;
 				
@@ -700,6 +705,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$genoptions['numberschedules'] = 2;
 				$genoptions['debugmode'] = false;
 				$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
+				$genoptions['frontpagestylescript'] = false;
 				$genoptions['version'] = "2.0";
 		
 				update_option('WeeklyScheduleGeneral', $genoptions);	
@@ -970,6 +976,12 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						</td>
 						<td colspan='2'><input type='text' name='daylist' style='width: 200px' value='<?php echo $options['daylist']; ?>' />
 						</td>						
+					</tr>
+					<tr>
+						<td>Target Window Name
+						</td>
+						<td><input type='text' name='linktarget' style='width: 250px' value='<?php echo $options['linktarget']; ?>' />
+						</td>
 					</tr>
 					</table>
 					<br /><br />
@@ -1385,7 +1397,7 @@ function ws_library_func($atts) {
 	
 	return ws_library($schedule, $options['starttime'], $options['endtime'], $options['timedivision'], $options['layout'], $options['tooltipwidth'], $options['tooltiptarget'],
 					  $options['tooltippoint'], $options['tooltipcolorscheme'], $options['displaydescription'], $options['daylist'], $options['timeformat'],
-					  $options['adjusttooltipposition']);
+					  $options['adjusttooltipposition'], $options['linktarget']);
 }
 
 function ws_library_flat_func($atts) {
@@ -1417,11 +1429,10 @@ function ws_library_flat_func($atts) {
 	
 function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'rightMiddle',
 					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'cream', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
-					$adjusttooltipposition = true) {
+					$adjusttooltipposition = true, $linktarget = 'newwindow') {
 	global $wpdb;	
 	
 	$numberofcols = ($endtime - $starttime) / $timedivision;
-	$linktarget = "newwindow";
 	
 	$output = "<!-- Weekly Schedule Output -->\n";
 
