@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.3 =
+* Increase size of day name field from 12 to 64 characters
+
 = 2.2.5 =
 * Add option to specify the link target (window) where links will be opened. Was previously hard-coded to new window.
 
