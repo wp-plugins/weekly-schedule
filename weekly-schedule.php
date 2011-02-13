@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.3
+Version: 2.3.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -286,12 +286,14 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
 				check_admin_referer('wspp-config');
 				
+				
+				
 				if ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "3.0")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
-					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
-					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0");
-					$itemstwohour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 2.0");
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
+					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0 and scheduleid = " . $schedule);
+					$itemstwohour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 2.0 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -318,9 +320,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				}
 				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "2.0")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
-					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
-					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0");
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
+					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -342,8 +344,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				}
 				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "1.0")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
-					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5");
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -360,7 +362,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				}
 				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "0.5")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25");
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -732,18 +734,31 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				<legend class="tooltip" title='These apply to all schedules' style='padding: 0 5px 0 5px;'><strong>General Settings <span style="border:0;padding-left: 15px;" class="submit"><input type="submit" name="submitgen" value="Update General Settings &raquo;" /></span></strong></legend>
 				<table>
 				<tr>
-				<td style='width:200px'>Stylesheet File Name</td>
-				<td><input type="text" id="stylesheet" name="stylesheet" size="40" value="<?php echo $genoptions['stylesheet']; ?>"/></td>
-				<td style='padding-left: 10px;padding-right:10px'>Number of Schedules</td>
-				<td><input type="text" id="numberschedules" name="numberschedules" size="5" value="<?php if ($genoptions['numberschedules'] == '') echo '2'; echo $genoptions['numberschedules']; ?>"/></td>
-				</tr>
-				<tr>
-				<td style="padding-left: 10px;padding-right:10px">Debug Mode</td>
-				<td><input type="checkbox" id="debugmode" name="debugmode" <?php if ($genoptions['debugmode']) echo ' checked="checked" '; ?>/></td>
-				</tr>
-				<tr>
-					<td colspan="2">Additional pages to load styles and scripts (Comma-Separated List of Page IDs)</td>
-					<td colspan="2"><input type='text' name='includestylescript' style='width: 200px' value='<?php echo $genoptions['includestylescript']; ?>' /></td>
+				<td style='padding: 8px; vertical-align: top'>
+					<table>
+					<tr>
+					<td style='width:200px'>Stylesheet File Name</td>
+					<td><input type="text" id="stylesheet" name="stylesheet" size="40" value="<?php echo $genoptions['stylesheet']; ?>"/></td>
+					</tr>
+					<tr>
+					<td>Number of Schedules</td>
+					<td><input type="text" id="numberschedules" name="numberschedules" size="5" value="<?php if ($genoptions['numberschedules'] == '') echo '2'; echo $genoptions['numberschedules']; ?>"/></td>
+					</tr>
+					<tr>
+					<td style="padding-left: 10px;padding-right:10px">Debug Mode</td>
+					<td><input type="checkbox" id="debugmode" name="debugmode" <?php if ($genoptions['debugmode']) echo ' checked="checked" '; ?>/></td>
+					</tr>
+					<tr>
+						<td colspan="2">Additional pages to style (Comma-Separated List of Page IDs)</td>
+					</tr>
+					<tr>
+						<td colspan="2"><input type='text' name='includestylescript' style='width: 200px' value='<?php echo $genoptions['includestylescript']; ?>' /></td>
+					</tr>
+					</table>
+				</td>
+				<td style='padding: 8px; vertical-align: top; border: #cccccc 1px solid;'>
+					<div><h3>ThemeFuse Original WP Themes</h3>If you are looking to buy an original WP theme, take a look at <a href="https://www.e-junkie.com/ecom/gb.php?cl=136641&c=ib&aff=153522" target="ejejcsingle">ThemeFuse</a><br />They have a nice 1-click installer, great support and good-looking themes.</div><div style='text-align: center; padding-top: 10px'><a href="https://www.e-junkie.com/ecom/gb.php?cl=136641&c=ib&aff=153522" target="ejejcsingle"><img src='http://themefuse.com/wp-content/themes/themefuse/images/campaigns/themefuse.jpg' /></a></div>
+				</td>
 				</tr>
 				</table>
 				</fieldset>
@@ -1544,9 +1559,9 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 			
 			if ($layout == 'vertical')
 			{
-				$output .= "<div class='verticalcolumn'>\n";
-				$output .= "<table class='vertical'>\n";
-				$output .= "<tr class='vertrow'>";
+				$output .= "<div class='verticalcolumn" . $day->rows. "'>\n";
+				$output .= "<table class='vertical" . $day->rows . "'>\n";				
+				$output .= "<tr class='vertrow" . $day->rows. "'>";
 			}
 			elseif ($layout == 'horizontal' || $layout == '')
 			{

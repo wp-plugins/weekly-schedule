@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.3.1 =
+* Fix check when you change time division to only check items under current schedule for conflicts
+
 = 2.3 =
 * Increase size of day name field from 12 to 64 characters
 
