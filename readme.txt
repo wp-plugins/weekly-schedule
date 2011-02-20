@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.3.2 =
+* Made fixes to accept event names with single quotes in their name
+
 = 2.3.1 =
 * Fix check when you change time division to only check items under current schedule for conflicts
 

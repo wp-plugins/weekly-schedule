@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.3.1
+Version: 2.3.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -1161,7 +1161,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					?>
 					<tr>
 					<td style='width: 180px'>Item Title</td>
-					<td><input style="width:360px" type="text" name="name" <?php if ($mode == "edit") echo "value='" . $selecteditem->name . "'";?>/></td>
+					<td><input style="width:360px" type="text" name="name" <?php if ($mode == "edit") echo 'value="' . stripslashes($selecteditem->name) . '"';?>/></td>
 					</tr>
 					<tr>
 					<td>Category</td>
@@ -1304,7 +1304,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							  <?php foreach($items as $item): ?>
 								<tr>
 								<td class='name column-name' style='background: #FFF'><?php echo $item->id; ?></td>
-								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo $item->name; ?></strong></a></td>
+								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo stripslashes($item->name); ?></strong></a></td>
 								<td style='background: #FFF;text-align:right'><?php echo $item->dayname; ?></td>
 								<td style='background: #FFF;text-align:right'>
 								<?php 
@@ -1646,7 +1646,7 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 					if ($item->address != "")
 						$output .= "<a target='" . $linktarget . "'href='" . $item->address. "'>";
 						
-					$output .= $item->itemname;
+					$output .= stripslashes($item->itemname);
 										
 					if ($item->address != "")
 						"</a>";
