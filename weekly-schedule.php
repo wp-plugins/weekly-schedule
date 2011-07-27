@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.3.2
+Version: 2.4
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -147,9 +147,9 @@ function ws_install() {
 		$options['endtime'] = 22;
 		$options['timedivision'] = 0.5;
 		$options['tooltipwidth'] = 300;
-		$options['tooltiptarget'] = 'rightMiddle';
-		$options['tooltippoint'] = 'leftMiddle';
-		$options['tooltipcolorscheme'] = 'cream';
+		$options['tooltiptarget'] = 'right center';
+		$options['tooltippoint'] = 'left center';
+		$options['tooltipcolorscheme'] = 'ui-tooltip';
 		$options['displaydescription'] = "tooltip";
 		$options['daylist'] = "";
 		$options['timeformat'] = "24hours";
@@ -169,7 +169,7 @@ function ws_install() {
 		$genoptions['debugmode'] = false;
 		$genoptions['includestylescript'] = "";
 		$genoptions['frontpagestylescript'] = false;
-		$genoptions['version'] = "2.0";
+		$genoptions['version'] = "2.4";
 		
 		update_option("WeeklyScheduleGeneral", $genoptions);
 	}
@@ -179,6 +179,25 @@ function ws_install() {
 		$wpdb->query("ALTER TABLE `" . $wpdb->prefix . "wsdays` CHANGE `name` `name` VARCHAR( 64 ) " . $charset_collate . " NOT NULL");
 		
 		update_option("WeeklyScheduleGeneral", $genoptions);
+	}
+	elseif ($genoptions['version'] == "2.3")
+	{
+		$genoptions['version'] = '2.4';
+		update_option('WeeklyScheduleGeneral', $genoptions);
+		
+		for ( $counter = 1; $counter <= $genoptions['numberschedules']; $counter += 1) {
+			$colors = array('cream' => 'ui-tooltip', 'dark' => 'ui-tooltip-dark', 'green' => 'ui-tooltip-green', 'light' => 'ui-tooltip-light', 'red' => 'ui-tooltip-red', 'blue' => 'ui-tooltip-blue');
+			$positions = array('topLeft' => 'top left', 'topMiddle' => 'top center', 'topRight' => 'top right', 'rightTop' => 'right top', 'rightMiddle' => 'right center', 'rightBottom' => 'right bottom', 'bottomLeft' => 'bottom left', 'bottomMiddle' => 'bottom center', 'bottomRight' => 'bottom right', 'leftTop' => 'left top', 'leftMiddle' => 'left center', 'leftBottom' => 'left bottom');
+			
+			$schedulename = 'WS_PP' . $counter;
+			$options = get_option($schedulename);
+			
+			$options['tooltipcolorscheme'] = $colors[$options['tooltipcolorscheme']];
+			$options['tooltiptarget'] = $positions[$options['tooltiptarget']];
+			$options['tooltippoint'] = $positions[$options['tooltippoint']];
+			
+			update_option($schedulename, $options);
+		}
 	}
 
 }
@@ -246,9 +265,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$options['endtime'] = 22;
 				$options['timedivision'] = 0.5;
 				$options['tooltipwidth'] = 300;
-				$options['tooltiptarget'] = 'rightMiddle';
-				$options['tooltippoint'] = 'leftMiddle';
-				$options['tooltipcolorscheme'] = 'cream';
+				$options['tooltiptarget'] = 'right center';
+				$options['tooltippoint'] = 'left center';
+				$options['tooltipcolorscheme'] = 'ui-tooltip';
 				$options['displaydescription'] = "tooltip";
 				$options['daylist'] = "";
 				$options['timeformat'] = "24hours";
@@ -664,9 +683,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$options['endtime'] = 22;
 				$options['timedivision'] = 0.5;
 				$options['tooltipwidth'] = 300;
-				$options['tooltiptarget'] = 'rightMiddle';
-				$options['tooltippoint'] = 'leftMiddle';
-				$options['tooltipcolorscheme'] = 'cream';
+				$options['tooltiptarget'] = 'right center';
+				$options['tooltippoint'] = 'left center';
+				$options['tooltipcolorscheme'] = 'ui-tooltip';
 				$options['displaydescription'] = "tooltip";
 				$options['daylist'] = "";
 				$options['timeformat'] = "24hours";
@@ -715,7 +734,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				$genoptions['debugmode'] = false;
 				$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
 				$genoptions['frontpagestylescript'] = false;
-				$genoptions['version'] = "2.0";
+				$genoptions['version'] = "2.4";
 		
 				update_option('WeeklyScheduleGeneral', $genoptions);	
 			}
@@ -1012,15 +1031,15 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Tooltip Color Scheme</td>
 					<td><select name='tooltipcolorscheme' style='width: 100px'>
-						<?php $colors = array('cream', 'dark', 'green', 'light', 'red', 'blue');
-							  foreach ($colors as $color)
+						<?php $colors = array('ui-tooltip' => 'cream', 'ui-tooltip-dark' => 'dark', 'ui-tooltip-green' => 'green', 'ui-tooltip-light' => 'light', 'ui-tooltip-red' => 'red', 'ui-tooltip-blue' => 'blue');					
+							  foreach ($colors as $key => $color)
 								{
-									if ($color == $options['tooltipcolorscheme'])
+									if ($key == $options['tooltipcolorscheme'])
 										$samecolor = "selected='selected'";
 									else
 										$samecolor = "";
 										
-									echo "<option value='" . $color . "' " . $samecolor . ">" . $color . "\n";
+									echo "<option value='" . $key . "' " . $samecolor . ">" . $color . "\n";
 								}
 						?>						
 					</select></td>
@@ -1029,13 +1048,14 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Tooltip Anchor Point on Data Cell</td>
 					<td><select name='tooltiptarget' style='width: 200px'>
-						<?php $positions = array('topLeft' => 'Top-Left Corner', 'topMiddle' => 'Middle of Top Side', 
-												'topRight' => 'Top-Right Corner', 'rightTop' => 'Right Side of Top-Right Corner',
-												'rightMiddle' => 'Middle of Right Side', 'rightBottom' => 'Right Side of Bottom-Right Corner',
-												'bottomLeft' => 'Under Bottom-Left Side', 'bottomMiddle' => 'Under Middle of Bottom Side',
-												'bottomRight' => 'Under Bottom-Right Side', 'leftTop' => 'Left Side of Top-Left Corner',
-												'leftMiddle' => 'Middle of Left Side', 'leftBottom' => 'Left Side of Bottom-Left Corner');
-								foreach($positions as $index => $position)
+						<?php $positions = array('top left' => 'Top-Left Corner', 'top center' => 'Middle of Top Side', 
+												'top right' => 'Top-Right Corner', 'right top' => 'Right Side of Top-Right Corner',
+												'right center' => 'Middle of Right Side', 'right bottom' => 'Right Side of Bottom-Right Corner',
+												'bottom left' => 'Under Bottom-Left Side', 'bottom center' => 'Under Middle of Bottom Side',
+												'bottom right' => 'Under Bottom-Right Side', 'left top' => 'Left Side of Top-Left Corner',
+												'left center' => 'Middle of Left Side', 'left bottom' => 'Left Side of Bottom-Left Corner');
+								
+						foreach($positions as $index => $position)
 								{
 									if ($index == $options['tooltiptarget'])
 										$sameposition = "selected='selected'";
@@ -1049,12 +1069,13 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</select></td>
 					<td>Tooltip Attachment Point</td>
 					<td><select name='tooltippoint' style='width: 200px'>
-						<?php $positions = array('topLeft' => 'Top-Left Corner', 'topMiddle' => 'Middle of Top Side', 
-												'topRight' => 'Top-Right Corner', 'rightTop' => 'Right Side of Top-Right Corner',
-												'rightMiddle' => 'Middle of Right Side', 'rightBottom' => 'Bottom-Right Corner',
-												'bottomLeft' => 'Bottom-Left Corner', 'bottomMiddle' => 'Center of Bottom Side',
-												'bottomRight' => 'Bottom Corner of Right Side', 'leftTop' => 'Top Corner of Left Side',
-												'leftMiddle' => 'Middle of Left Side', 'leftBottom' => 'Bottom Corner of Left Side');
+						<?php $positions = array('top left' => 'Top-Left Corner', 'top center' => 'Middle of Top Side', 
+												'top right' => 'Top-Right Corner', 'right top' => 'Right Side of Top-Right Corner',
+												'right center' => 'Middle of Right Side', 'right bottom' => 'Right Side of Bottom-Right Corner',
+												'bottom left' => 'Under Bottom-Left Side', 'bottom center' => 'Under Middle of Bottom Side',
+												'bottom right' => 'Under Bottom-Right Side', 'left top' => 'Left Side of Top-Left Corner',
+												'left center' => 'Middle of Left Side', 'left bottom' => 'Left Side of Bottom-Left Corner');
+						
 								foreach($positions as $index => $position)
 								{
 									if ($index == $options['tooltippoint'])
@@ -1449,8 +1470,8 @@ function ws_library_flat_func($atts) {
 }
 
 	
-function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'rightMiddle',
-					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'cream', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
+function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'right center',
+					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'ui-tooltip', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
 					$adjusttooltipposition = true, $linktarget = 'newwindow') {
 	global $wpdb;	
 	
@@ -1719,20 +1740,20 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 		$output .= "\t\t\tcontent: jQuery(this).attr('tooltip'), // Use the tooltip attribute of the element for the content\n";
 		$output .= "\t\t\tstyle: {\n";
 		$output .= "\t\t\t\twidth: " . $tooltipwidth . ",\n";
-		$output .= "\t\t\t\tname: '" . $tooltipcolorscheme . "' // Give it a crea mstyle to make it stand out\n";
+		$output .= "\t\t\t\tclasses: '" . $tooltipcolorscheme . "' // Give it a crea mstyle to make it stand out\n";
 		$output .= "\t\t\t},\n";
 		$output .= "\t\t\tposition: {\n";
 		if ($adjusttooltipposition)
-			$output .= "\t\t\t\tadjust: {screen: true},\n";
-		$output .= "\t\t\t\tcorner: {\n";
-		$output .= "\t\t\t\t\ttarget: '" . $tooltiptarget . "',\n";
-		$output .= "\t\t\t\t\ttooltip: '" . $tooltippoint . "'\n";
-		$output .= "\t\t\t\t}\n";
+			$output .= "\t\t\t\tadjust: {method: 'flip flip'},\n";
+		$output .= "\t\t\t\tviewport: jQuery(window),\n";
+		$output .= "\t\t\t\tat: '" . $tooltiptarget . "',\n";
+		$output .= "\t\t\t\tmy: '" . $tooltippoint . "'\n";
 		$output .= "\t\t\t}\n";
 		$output .= "\t\t});\n";
 		$output .= "\t});\n";
 		$output .= "});\n";
 		$output .= "</script>\n";
+		
 	}
 	
 	$output .= "<!-- End of Weekly Schedule Output -->\n";
@@ -1740,8 +1761,8 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
  	return $output;
 }
 
-function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'rightMiddle',
-					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'cream', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
+function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivision = 0.5, $layout = 'horizontal', $tooltipwidth = 300, $tooltiptarget = 'right center',
+					$tooltippoint = 'leftMiddle', $tooltipcolorscheme = 'ui-tooltip', $displaydescription = 'tooltip', $daylist = '', $timeformat = '24hours',
 					$adjusttooltipposition = true) {
 	global $wpdb;	
 	
@@ -1986,7 +2007,8 @@ function ws_conditionally_add_scripts_and_styles($posts){
 	
 	if ($load_qtip)
 	{
-		wp_enqueue_script('qtip', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-1.0.min.js');
+		wp_enqueue_style('qtipstyle', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-2.0.min.css');
+		wp_enqueue_script('qtip', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-2.0.min.js');
 	}
 	 
 	return $posts;

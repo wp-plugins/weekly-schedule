@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.4 =
+* Updated qtip tooltip plugin to version 2.0 RC
+
 = 2.3.2 =
 * Made fixes to accept event names with single quotes in their name
 
