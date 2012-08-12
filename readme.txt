@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.5 =
+* Added a new widget to the plugin to be able to display the day's items in a site's sidebar easily (Thanks to Philip Kirwan for initial coding)
+
 = 2.4 =
 * Updated qtip tooltip plugin to version 2.0 RC
 
