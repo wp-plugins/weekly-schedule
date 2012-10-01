@@ -26,6 +26,10 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.6 =
+* Added shortcode [daily-weekly-schedule] to display current day's items in a post / page. Similar to widget
+* Added ability to specify item background color and title font color
+
 = 2.5 =
 * Added a new widget to the plugin to be able to display the day's items in a site's sidebar easily (Thanks to Philip Kirwan for initial coding)
 

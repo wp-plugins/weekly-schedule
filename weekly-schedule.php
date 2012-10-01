@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.5
+Version: 2.6
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -85,9 +85,9 @@ function ws_install() {
 			(7, 'Sat', 1, 1)");
 			
 	$wpdb->wsitems = $wpdb->prefix.'wsitems';
-			
-	$wpdb->query("
-			CREATE TABLE IF NOT EXISTS `$wpdb->wsitems` (
+    
+	$item_table_creation_query = "
+			CREATE TABLE `$wpdb->wsitems` (
 				`id` int(10) unsigned NOT NULL auto_increment,
 				`name` varchar(255) NOT NULL,
 				`description` text NOT NULL,
@@ -98,8 +98,13 @@ function ws_install() {
 				`day` int(10) unsigned NOT NULL,
 				`category` int(10) unsigned NOT NULL,
 				`scheduleid` int(10) NOT NULL default '0',
+                `backgroundcolor` varchar(7) NULL,
+                `titlecolor` varchar(7) NULL,
 				PRIMARY KEY  (`id`,`scheduleid`)
-			) $charset_collate");
+			) $charset_collate";
+    
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    dbDelta( $item_table_creation_query );
 
 	$upgradeoptions = get_option('WS_PP');
 	
@@ -500,14 +505,16 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				if (isset($_POST['name']) && isset($_POST['starttime']) && isset($_POST['duration']) && $_POST['name'] != '')
 				{
-					$newitem = array("name" => $_POST['name'],
-									 "description" => $_POST['description'],
-									 "address" => $_POST['address'],
-									 "starttime" => $_POST['starttime'],
-									 "category" => $_POST['category'],
-									 "duration" => $_POST['duration'],
-									 "day" => $_POST['day'],
-									 "scheduleid" => $_POST['schedule']);
+					$newitem = array( 'name' => $_POST['name'],
+									  'description' => $_POST['description'],
+									  'address' => $_POST['address'],
+									  'starttime' => $_POST['starttime'],
+									  'category' => $_POST['category'],
+									  'duration' => $_POST['duration'],
+									  'day' => $_POST['day'],
+									  'scheduleid' => $_POST['schedule'],
+                                      'backgroundcolor' => $_POST['backgroundcolor'],
+                                      'titlecolor' => $_POST['titlecolor'] );
 									 
 					if (isset($_POST['updateitem']))
 					{
@@ -1295,7 +1302,15 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								echo "<option value='" . $i . "' " . $selectedstring . ">" .  floor($i) . "h" . $minutes . "\n";
 						  }
 					?></select></td>
+                    </tr>
+                    <tr>
+                    <td>Background Cell Color (optional)</td>
+                    <td><input style="width:100px" type="text" name="backgroundcolor" <?php if ($mode == "edit") echo "value='" . $selecteditem->backgroundcolor . "'";?>/></td>
 					</tr>
+                    <tr>
+                    <td>Title Color (optional)</td>
+                    <td><input style="width:100px" type="text" name="titlecolor" <?php if ($mode == "edit") echo "value='" . $selecteditem->titlecolor . "'";?>/></td>
+					</tr>                    
 					</table>
 					<?php if ($mode == "edit"): ?>
 						<p style="border:0;" class="submit"><input type="submit" name="updateitem" value="Update &raquo;" /></p>
@@ -1652,7 +1667,12 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 					if ($layout == 'vertical')
 							$output .= "<tr class='datarow" . $colspan . "'>";
 					
-					$output .= "<td ";
+					$output .= '<td class=ws-item-' . $item->id . ' ';
+                    
+                    if ( !empty( $item->backgroundcolor) ) {
+                        
+                        $output .= 'style= "' . 'background-color:' . $item->backgroundcolor . ';"';
+                    }
 					
 					if ($displaydescription == "tooltip" && $item->description != "")
 						$output .= "tooltip='" . htmlspecialchars(stripslashes($item->description),  ENT_QUOTES) . "' ";
@@ -1663,6 +1683,13 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 						$output .= "colspan='" . $colspan . "' ";
 					
 					$output .= "class='cat" . $item->catid . "'>";
+                    
+                    $output .= '<div class="ws-item-title ws-item-title-' . $item->id . '"';
+                    
+                    if ( !empty( $item->titlecolor ) )
+                        $output .= ' style="color:' . $item->titlecolor . '"';
+                    
+                    $output .= ">";
 					
 					if ($item->address != "")
 						$output .= "<a target='" . $linktarget . "'href='" . $item->address. "'>";
@@ -1671,6 +1698,8 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 										
 					if ($item->address != "")
 						"</a>";
+                    
+                    $output .= "</div>";
 						
 					if ($displaydescription == "cell")
 						$output .= "<br />" .  stripslashes($item->description);
@@ -1912,6 +1941,63 @@ add_action('admin_menu', array('WS_Admin','add_config_page'));
 add_shortcode('weekly-schedule', 'ws_library_func');
 
 add_shortcode('flat-weekly-schedule', 'ws_library_flat_func');
+
+add_shortcode( 'daily-weekly-schedule', 'ws_day_list_func' );
+
+function ws_day_list_func() {
+    extract(shortcode_atts(array(
+		'schedule' => 1,
+        'max_items' => 5,
+        'empty_msg' => 'No Items Found'
+	), $atts));
+    
+    $today = date( 'w', current_time( 'timestamp', 0 ) ) + 1;
+    $output = '<div class="ws_widget_output">';
+
+    //fetch results
+    global $wpdb;
+
+    $schedule_query = 'SELECT * from ' . $wpdb->prefix . 
+                'wsitems WHERE day = ' . $today . 			
+                ' AND scheduleid = ' . $schedule . ' ORDER by starttime ASC LIMIT 0, ' . $max_items;
+
+    $schedule_items = $wpdb->get_results( $schedule_query );
+
+    if ( ! empty( $schedule_items ) ) {
+        $output .= '<ul>';
+
+        foreach ( $schedule_items as $schedule_item ) {
+            $item_name = stripslashes( $schedule_item->name );
+            $start_hour = $schedule_item->starttime;
+
+            if( strpos( $start_hour, '.' ) > 0 ) {
+                $start_hour = substr( $start_hour, 0, strlen( $start_hour ) - strpos( $start_hour, '.' ) );
+                $start_hour .= ':30';
+            } else {
+                $start_hour .= ":00";
+            }
+
+            $output .= '<li>';
+            if ( !empty( $schedule_item->address ) ) {
+                echo '<a href="' . $schedule_item->address . '">';
+            }
+            $output .= $start_hour . ' - ' . $item_name;
+
+            if ( !empty( $schedule_item->address ) ) {
+                $output .= '</a>';
+            }
+            $output .= '</li>';
+        }
+
+      $output .= '</ul>';
+    } else {
+      $output .= $empty_msg;  
+    }
+
+    $output .= '</div>';
+    
+    return $output;
+}
 
 add_filter('the_posts', 'ws_conditionally_add_scripts_and_styles'); // the_posts gets triggered before wp_head
 
@@ -2174,5 +2260,7 @@ class WSTodayScheduleWidget extends WP_Widget {
 	}
 
 }
+
+
 
 ?>
