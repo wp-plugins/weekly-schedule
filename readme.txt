@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.6.1 =
+* Fixed problem with new shortcode [daily-weekly-schedule] to properly accept parameters
+
 = 2.6 =
 * Added shortcode [daily-weekly-schedule] to display current day's items in a post / page. Similar to widget
 * Added ability to specify item background color and title font color
@@ -128,6 +131,10 @@ Create an entry in the stylesheet called cat# where # should be replaced with th
 = How do I add images to the tooltip =
 
 Use HTML codes in the item description to load images or do any other type of HTML formatting.
+
+= What parameters are available with the [daily-weekly-schedule] shortcode? =
+
+You can call the shortcode as follows: [daily-weekly-schedule schedule='2' max_items='5' empty_msg='No Items Found']
 
 == Screenshots ==
 

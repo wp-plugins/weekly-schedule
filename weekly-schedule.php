@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.6
+Version: 2.6.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
@@ -1944,7 +1944,7 @@ add_shortcode('flat-weekly-schedule', 'ws_library_flat_func');
 
 add_shortcode( 'daily-weekly-schedule', 'ws_day_list_func' );
 
-function ws_day_list_func() {
+function ws_day_list_func( $atts ) {
     extract(shortcode_atts(array(
 		'schedule' => 1,
         'max_items' => 5,
