@@ -2,10 +2,12 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.6.1
+Version: 2.7
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
-Copyright 2010  Yannick Lefebvre  (email : ylefebvre@gmail.com)    
+Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
+
+Contributions to version 2.7 by Daniel R. Baleato 
 
 This program is free software; you can redistribute it and/or modify   
 it under the terms of the GNU General Public License as published by    
@@ -48,6 +50,7 @@ function ws_install() {
 				`id` int(10) unsigned NOT NULL auto_increment,
 				`name` varchar(255) NOT NULL,
 				`scheduleid` int(10) default NULL,
+				`backgroundcolor` varchar(7) NULL,
 				PRIMARY KEY  (`id`)
 				) $charset_collate"); 
 				
@@ -56,8 +59,8 @@ function ws_install() {
 			
 	if (!$catsresult)
 		$result = $wpdb->query("
-			INSERT INTO `$wpdb->wscategories` (`name`, `scheduleid`) VALUES
-			('Default', 1)");				
+			INSERT INTO `$wpdb->wscategories` (`name`, `scheduleid`, `backgroundcolor`) VALUES
+			('Default', 1, NULL)");				
 				
 	$wpdb->wsdays = $wpdb->prefix.'wsdays';
 	
@@ -89,7 +92,7 @@ function ws_install() {
 	$item_table_creation_query = "
 			CREATE TABLE `$wpdb->wsitems` (
 				`id` int(10) unsigned NOT NULL auto_increment,
-				`name` varchar(255) NOT NULL,
+				`name` varchar(255),
 				`description` text NOT NULL,
 				`address` varchar(255) NOT NULL,
 				`starttime` float unsigned NOT NULL,
@@ -174,19 +177,15 @@ function ws_install() {
 		$genoptions['debugmode'] = false;
 		$genoptions['includestylescript'] = "";
 		$genoptions['frontpagestylescript'] = false;
-		$genoptions['version'] = "2.4";
+		$genoptions['version'] = "2.7";
 		
-		update_option("WeeklyScheduleGeneral", $genoptions);
-	}
-	elseif ($genoptions['version'] == "2.0")
-	{
-		$genoptions['version'] = "2.3";
+		update_option( 'WeeklyScheduleGeneral', $genoptions );
+	} elseif ( $genoptions['version'] == '2.0' ) {
+		$genoptions['version'] = '2.3';
 		$wpdb->query("ALTER TABLE `" . $wpdb->prefix . "wsdays` CHANGE `name` `name` VARCHAR( 64 ) " . $charset_collate . " NOT NULL");
 		
-		update_option("WeeklyScheduleGeneral", $genoptions);
-	}
-	elseif ($genoptions['version'] == "2.3")
-	{
+		update_option( 'WeeklyScheduleGeneral', $genoptions );
+	} elseif ( $genoptions['version'] == '2.3' ) {
 		$genoptions['version'] = '2.4';
 		update_option('WeeklyScheduleGeneral', $genoptions);
 		
@@ -203,6 +202,13 @@ function ws_install() {
 			
 			update_option($schedulename, $options);
 		}
+	} elseif ( $genoptions['version'] < 2.7 ) {
+		$genoptions['version'] = '2.7';
+		update_option( 'WeeklyScheduleGeneral', $genoptions );
+
+		$wpdb->query("ALTER TABLE `" . $wpdb->prefix . "wscategories` ADD COLUMN `backgroundcolor` varchar(7) NULL");
+
+		$wpdb->query( "ALTER TABLE  `" . $wpdb->prefix . "wsitems` CHANGE `name`  `name` VARCHAR( 255 ) NULL" );        
 	}
 
 }
@@ -454,7 +460,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				check_admin_referer('wspp-config');
 				
 				if (isset($_POST['name']))
-					$newcat = array("name" => $_POST['name'], "scheduleid" => $_POST['schedule']);
+					$newcat = array(
+							"name" => $_POST['name'], 
+							"scheduleid" => $_POST['schedule'],
+							'backgroundcolor' => $_POST['backgroundcolor']
+							);
 				else
 					$newcat = "";
 					
@@ -503,7 +513,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
 				check_admin_referer('wspp-config');
 				
-				if (isset($_POST['name']) && isset($_POST['starttime']) && isset($_POST['duration']) && $_POST['name'] != '')
+				if (isset($_POST['name']) && isset($_POST['starttime']) && isset($_POST['duration']))
 				{
 					$newitem = array( 'name' => $_POST['name'],
 									  'description' => $_POST['description'],
@@ -1118,6 +1128,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<strong>Editing Category #<?php echo $selectedcat->id; ?></strong><br />
 					<?php endif; ?>
 					Category Name: <input style="width:300px" type="text" name="name" <?php if ($mode == "edit") echo "value='" . $selectedcat->name . "'";?>/>
+					<br>Background Cell Color (optional)
+					<input style="width:100px" type="text" name="backgroundcolor" <?php if ($mode == "edit") echo "value='" . $selectedcat->backgroundcolor . "'";?>/>
 					<input type="hidden" name="id" value="<?php if ($mode == "edit") echo $selectedcat->id; ?>" />
 					<input type="hidden" name="schedule" value="<?php echo $schedule; ?>" />
 					<?php if ($mode == "edit"): ?>
@@ -1128,7 +1140,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</form>
 				</div>
 				<div>
-					<?php $cats = $wpdb->get_results("SELECT count( i.id ) AS nbitems, c.name, c.id, c.scheduleid FROM " . $wpdb->prefix . "wscategories c LEFT JOIN " . $wpdb->prefix . "wsitems i ON i.category = c.id WHERE c.scheduleid = " . $schedule . " GROUP BY c.name");
+					<?php $cats = $wpdb->get_results("SELECT count( i.id ) AS nbitems, c.name, c.id, c.backgroundcolor, c.scheduleid FROM " . $wpdb->prefix . "wscategories c LEFT JOIN " . $wpdb->prefix . "wsitems i ON i.category = c.id WHERE c.scheduleid = " . $schedule . " GROUP BY c.id");
 					
 							if ($cats): ?>
 							  <table class='widefat' style='clear:none;width:400px;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
@@ -1136,6 +1148,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							  <tr>
   							  <th scope='col' style='width: 50px' id='id' class='manage-column column-id' >ID</th>
 							  <th scope='col' id='name' class='manage-column column-name' style=''>Name</th>
+							  <th scope='col' style='width: 50px;text-align: right' id='color' class='manage-column column-color' style=''>Color</th>
 							  <th scope='col' style='width: 50px;text-align: right' id='items' class='manage-column column-items' style=''>Items</th>
 							  <th style='width: 30px'></th>
 							  </tr>
@@ -1147,6 +1160,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								<tr>
 								<td class='name column-name' style='background: #FFF'><?php echo $cat->id; ?></td>
 								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;editcat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>'><strong><?php echo $cat->name; ?></strong></a></td>
+								<td style='background: <?php echo $cat->backgroundcolor != NULL ? $cat->backgroundcolor : '#FFF'; ?>;text-align:right'></td>
 								<td style='background: #FFF;text-align:right'><?php echo $cat->nbitems; ?></td>
 								<?php if ($cat->nbitems == 0): ?>
 								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deletecat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>' 
@@ -1320,7 +1334,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</form>
 				</div>
 				<div>
-				<?php $items = $wpdb->get_results("SELECT d.name as dayname, i.id, i.name, i.day, i.starttime FROM " . $wpdb->prefix . "wsitems as i, " . $wpdb->prefix . "wsdays as d WHERE i.day = d.id 
+				<?php $items = $wpdb->get_results("SELECT d.name as dayname, i.id, i.name, i.backgroundcolor, i.day, i.starttime FROM " . $wpdb->prefix . "wsitems as i, " . $wpdb->prefix . "wsdays as d WHERE i.day = d.id 
 								and i.scheduleid = " . $schedule . " and d.scheduleid = " . $_GET['schedule'] . " ORDER by day, starttime, name");
 					
 							if ($items): ?>
@@ -1329,6 +1343,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							  <tr>
   							  <th scope='col' style='width: 50px' id='id' class='manage-column column-id' >ID</th>
 							  <th scope='col' id='name' class='manage-column column-name' style=''>Name</th>
+							  <th scope='col' id='color' class='manage-column column-color' style=''>Color</th>
 							  <th scope='col' id='day' class='manage-column column-day' style='text-align: right'>Day</th>
 							  <th scope='col' style='width: 50px;text-align: right' id='starttime' class='manage-column column-items' style=''>Start Time</th>
 							  <th style='width: 30px'></th>
@@ -1339,8 +1354,10 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 
 							  <?php foreach($items as $item): ?>
 								<tr>
-								<td class='name column-name' style='background: #FFF'><?php echo $item->id; ?></td>
+								<td class='name column-name' style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo $item->id; ?></strong></a></td>
 								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo stripslashes($item->name); ?></strong></a></td>
+
+								<td style='background: <?php echo $item->backgroundcolor ? $item->backgroundcolor : '#FFF'; ?>'></td>
 								<td style='background: #FFF;text-align:right'><?php echo $item->dayname; ?></td>
 								<td style='background: #FFF;text-align:right'>
 								<?php 
@@ -1621,7 +1638,7 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 			if ($layout == 'vertical')
 				$output .= "</tr>\n";
 
-			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . $wpdb->prefix . 
+			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid, i.backgroundcolor as itemcolor, c.backgroundcolor as categorycolor from " . $wpdb->prefix . 
 						"wsitems i, " . $wpdb->prefix . "wscategories c WHERE day = " . $day->id . 			
 						" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
 						$endtime . " ORDER by starttime";
@@ -1668,10 +1685,10 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 							$output .= "<tr class='datarow" . $colspan . "'>";
 					
 					$output .= '<td class=ws-item-' . $item->id . ' ';
-                    
-                    if ( !empty( $item->backgroundcolor) ) {
+					
+					if ( !empty( $item->bgitem) || !empty( $item->bgcategory) ) {
                         
-                        $output .= 'style= "' . 'background-color:' . $item->backgroundcolor . ';"';
+                        $output .= 'style= "' . 'background-color:' . (!empty( $item->bgitem) ? $item->bgitem : $item->bgcategory ) . ';"';
                     }
 					
 					if ($displaydescription == "tooltip" && $item->description != "")

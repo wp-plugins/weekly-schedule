@@ -26,6 +26,11 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.7 =
+* Added ability to specify category background color in admin interface
+* Added option to leave item name blank
+* Both new functionalities contributed by Daniel R. Baleato
+
 = 2.6.1 =
 * Fixed problem with new shortcode [daily-weekly-schedule] to properly accept parameters
 
