@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.7.1 =
+* Fix to background color issue introduced in version 2.7
+
 = 2.7 =
 * Added ability to specify category background color in admin interface
 * Added option to leave item name blank
