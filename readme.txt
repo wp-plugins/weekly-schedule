@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.7.2 =
+* Changed way that Admin page URL is built to work on https configurations
+
 = 2.7.1 =
 * Fix to background color issue introduced in version 2.7
 

@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.7.1
+Version: 2.7.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
@@ -241,9 +241,6 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			global $wpdb;
 			
 			$adminpage == "";
-			
-			if ( !defined('WP_ADMIN_URL') )
-				define( 'WP_ADMIN_URL', get_option('siteurl') . '/wp-admin');
 			
 			if ( isset($_GET['schedule']) ) {
 				$schedule = $_GET['schedule'];				
@@ -761,7 +758,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				<h2>Weekly Schedule Configuration</h2>
 				<a href="http://yannickcorner.nayanna.biz/wordpress-plugins/weekly-schedule/" target="weeklyschedule"><img src="<?php echo $wspluginpath; ?>/icons/btn_donate_LG.gif" /></a> | <a target='wsinstructions' href='http://wordpress.org/extend/plugins/weekly-schedule/installation/'>Installation Instructions</a> | <a href='http://wordpress.org/extend/plugins/weekly-schedule/faq/' target='llfaq'>FAQ</a> | <a href='http://yannickcorner.nayanna.biz/contact-me'>Contact the Author</a><br /><br />
 				
-				<form name='wsadmingenform' action="<?php echo WP_ADMIN_URL ?>/options-general.php?page=weekly-schedule.php" method="post" id="ws-conf">
+				<form name='wsadmingenform' action="<?php echo add_query_arg( 'page', 'weekly-schedule', admin_url( 'options-general.php' ) ); ?>" method="post" id="ws-conf">
 				<?php
 				if ( function_exists('wp_nonce_field') )
 						wp_nonce_field('wspp-config');
@@ -857,7 +854,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				<legend style='padding: 0 5px 0 5px;'><strong>Settings for Schedule <?php echo $schedule; ?> - <?php echo $options['schedulename']; ?></strong></legend>	
 				<?php if (($adminpage == "") || ($adminpage == "general")): ?>
 				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>"><strong>General Settings</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
-				<form name="wsadminform" action="<?php echo WP_ADMIN_URL ?>/options-general.php?page=weekly-schedule.php" method="post" id="ws-config">
+				<form name="wsadminform" action="<?php echo add_query_arg( 'page', 'weekly-schedule', admin_url( 'options-general.php' ) ); ?>" method="post" id="ws-config">
 				<?php
 					if ( function_exists('wp_nonce_field') )
 						wp_nonce_field('wspp-config');
