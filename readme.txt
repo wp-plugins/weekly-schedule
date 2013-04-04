@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.7.4 =
+* Fixed bug with link output in weekly schedule grid
+
 = 2.7.2 =
 * Changed way that Admin page URL is built to work on https configurations
 

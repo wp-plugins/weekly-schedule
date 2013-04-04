@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.7.2
+Version: 2.7.4
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
@@ -30,6 +30,14 @@ else if (is_file(trailingslashit(ABSPATH.PLUGINDIR).'weekly-schedule/weekly-sche
 	define('WS_FILE', trailingslashit(ABSPATH.PLUGINDIR).'weekly-schedule/weekly-schedule.php');
 }
 
+function ws_db_prefix() {
+		global $wpdb;
+		if (method_exists($wpdb, "get_blog_prefix"))
+			return $wpdb->get_blog_prefix();
+		else
+			return $wpdb->prefix;
+}
+
 function ws_install() {
 	global $wpdb;
 
@@ -43,7 +51,7 @@ function ws_install() {
 		}
 	}
 	
-	$wpdb->wscategories = $wpdb->prefix.'wscategories';
+	$wpdb->wscategories = ws_db_prefix() .'wscategories';
 
 	$result = $wpdb->query("
 			CREATE TABLE IF NOT EXISTS `$wpdb->wscategories` (
@@ -62,7 +70,7 @@ function ws_install() {
 			INSERT INTO `$wpdb->wscategories` (`name`, `scheduleid`, `backgroundcolor`) VALUES
 			('Default', 1, NULL)");				
 				
-	$wpdb->wsdays = $wpdb->prefix.'wsdays';
+	$wpdb->wsdays = ws_db_prefix().'wsdays';
 	
 	$result = $wpdb->query("
 			CREATE TABLE IF NOT EXISTS `$wpdb->wsdays` (
@@ -87,7 +95,7 @@ function ws_install() {
 			(6, 'Fri', 1, 1),
 			(7, 'Sat', 1, 1)");
 			
-	$wpdb->wsitems = $wpdb->prefix.'wsitems';
+	$wpdb->wsitems = ws_db_prefix().'wsitems';
     
 	$item_table_creation_query = "
 			CREATE TABLE `$wpdb->wsitems` (
@@ -182,7 +190,7 @@ function ws_install() {
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 	} elseif ( $genoptions['version'] == '2.0' ) {
 		$genoptions['version'] = '2.3';
-		$wpdb->query("ALTER TABLE `" . $wpdb->prefix . "wsdays` CHANGE `name` `name` VARCHAR( 64 ) " . $charset_collate . " NOT NULL");
+		$wpdb->query("ALTER TABLE `" . ws_db_prefix() . "wsdays` CHANGE `name` `name` VARCHAR( 64 ) " . $charset_collate . " NOT NULL");
 		
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 	} elseif ( $genoptions['version'] == '2.3' ) {
@@ -206,9 +214,9 @@ function ws_install() {
 		$genoptions['version'] = '2.7';
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 
-		$wpdb->query("ALTER TABLE `" . $wpdb->prefix . "wscategories` ADD COLUMN `backgroundcolor` varchar(7) NULL");
+		$wpdb->query("ALTER TABLE `" . ws_db_prefix() . "wscategories` ADD COLUMN `backgroundcolor` varchar(7) NULL");
 
-		$wpdb->query( "ALTER TABLE  `" . $wpdb->prefix . "wsitems` CHANGE `name`  `name` VARCHAR( 255 ) NULL" );        
+		$wpdb->query( "ALTER TABLE  `" . ws_db_prefix() . "wsitems` CHANGE `name`  `name` VARCHAR( 255 ) NULL" );        
 	}
 
 }
@@ -317,10 +325,10 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				if ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "3.0")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
-					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
-					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0 and scheduleid = " . $schedule);
-					$itemstwohour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 2.0 and scheduleid = " . $schedule);
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
+					$itemshour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 1.0 and scheduleid = " . $schedule);
+					$itemstwohour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 2.0 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -347,9 +355,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				}
 				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "2.0")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
-					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
-					$itemshour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 1.0 and scheduleid = " . $schedule);
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
+					$itemshour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 1.0 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -371,8 +379,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				}
 				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "1.0")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
-					$itemshalfhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemshalfhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.5 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -389,7 +397,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				}
 				elseif ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "0.5")
 				{
-					$itemsquarterhour = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
+					$itemsquarterhour = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE MOD(duration, 1) = 0.25 and scheduleid = " . $schedule);
 					
 					if ($itemsquarterhour)
 					{
@@ -450,7 +458,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				$mode = "edit";
 								
-				$selectedcat = $wpdb->get_row("select * from " . $wpdb->prefix . "wscategories where id = " . $_GET['editcat']);
+				$selectedcat = $wpdb->get_row("select * from " . ws_db_prefix() . "wscategories where id = " . $_GET['editcat']);
 			}			
 			if ( isset($_POST['newcat']) || isset($_POST['updatecat'])) {
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
@@ -471,12 +479,12 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					
 				if (isset($_POST['newcat']))
 				{
-					$wpdb->insert( $wpdb->prefix.'wscategories', $newcat);
+					$wpdb->insert( ws_db_prefix().'wscategories', $newcat);
 					echo '<div id="message" class="updated fade"><p><strong>Inserted New Category</strong></div>';
 				}
 				elseif (isset($_POST['updatecat']))
 				{
-					$wpdb->update( $wpdb->prefix.'wscategories', $newcat, $id);
+					$wpdb->update( ws_db_prefix().'wscategories', $newcat, $id);
 					echo '<div id="message" class="updated fade"><p><strong>Category Updated</strong></div>';
 				}
 				
@@ -488,11 +496,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			{
 				$adminpage = 'categories';
 				
-				$catexist = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wscategories WHERE id = " . $_GET['deletecat']);
+				$catexist = $wpdb->get_row("SELECT * from " . ws_db_prefix() . "wscategories WHERE id = " . $_GET['deletecat']);
 				
 				if ($catexist)
 				{
-					$wpdb->query("DELETE from " . $wpdb->prefix . "wscategories WHERE id = " . $_GET['deletecat']);
+					$wpdb->query("DELETE from " . ws_db_prefix() . "wscategories WHERE id = " . $_GET['deletecat']);
 					echo '<div id="message" class="updated fade"><p><strong>Category Deleted</strong></div>';
 				}
 			}
@@ -502,7 +510,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				$mode = "edit";
 								
-				$selecteditem = $wpdb->get_row("select * from " . $wpdb->prefix . "wsitems where id = " . $_GET['edititem'] . " AND scheduleid = " . $_GET['schedule']);
+				$selecteditem = $wpdb->get_row("select * from " . ws_db_prefix() . "wsitems where id = " . $_GET['edititem'] . " AND scheduleid = " . $_GET['schedule']);
 			}
 			if (isset($_POST['newitem']) || isset($_POST['updateitem']))
 			{
@@ -541,7 +549,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							
 						$endtime = $newitem['starttime'] + $newitem['duration'];
 					
-						$conflictquery = "SELECT * from " . $wpdb->prefix . "wsitems where day = " . $newitem['day'] . $checkid;
+						$conflictquery = "SELECT * from " . ws_db_prefix() . "wsitems where day = " . $newitem['day'] . $checkid;
 						$conflictquery .= " and row = " . $row;
 						$conflictquery .= " and scheduleid = " . $newitem['scheduleid'];
 						$conflictquery .= " and ((" . $newitem['starttime'] . " < starttime and " . $endtime . " > starttime) or";
@@ -565,9 +573,9 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						{
 							if ($origrow > 1)
 							{
-								$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $origday . " AND scheduleid = " . $_POST['schedule']);
+								$itemday = $wpdb->get_row("SELECT * from " . ws_db_prefix() . "wsdays WHERE id = " . $origday . " AND scheduleid = " . $_POST['schedule']);
 								
-								$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $origday . " AND row = " . $origrow . " AND scheduleid = " . $_POST['schedule'] . " AND id != " . $_POST['id']);
+								$othersonrow = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE day = " . $origday . " AND row = " . $origrow . " AND scheduleid = " . $_POST['schedule'] . " AND id != " . $_POST['id']);
 								if (!$othersonrow)
 								{
 									if ($origrow != $itemday->rows)
@@ -577,7 +585,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 											$newrow = $i - 1;
 											$changerow = array("row" => $newrow);
 											$oldrow = array("row" => $i, "day" => $origday);
-											$wpdb->update($wpdb->prefix . 'wsitems', $changerow, $oldrow);
+											$wpdb->update(ws_db_prefix() . 'wsitems', $changerow, $oldrow);
 										}
 									}
 									
@@ -585,19 +593,19 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									$newrow = $itemday->rows - 1;
 									$newdayrow = array("rows" => $newrow);
 									
-									$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
+									$wpdb->update(ws_db_prefix() . 'wsdays', $newdayrow, $dayid);
 								}
 							}							
 						}
 					}
 					
-					$dayrow = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays where id = " . $_POST['day'] . " AND scheduleid = " . $_POST['schedule']);
+					$dayrow = $wpdb->get_row("SELECT * from " . ws_db_prefix() . "wsdays where id = " . $_POST['day'] . " AND scheduleid = " . $_POST['schedule']);
 					if ($dayrow->rows < $row)
 					{
 						$dayid = array("id" => $_POST['day'], "scheduleid" => $_POST['schedule']);
 						$newdayrow = array("rows" => $row);
 						
-						$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
+						$wpdb->update(ws_db_prefix() . 'wsdays', $newdayrow, $dayid);
 					}
 					
 					$newitem['row'] = $row;
@@ -607,12 +615,12 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						
 					if (isset($_POST['newitem']))
 					{
-						$wpdb->insert( $wpdb->prefix.'wsitems', $newitem);
+						$wpdb->insert( ws_db_prefix().'wsitems', $newitem);
 						echo '<div id="message" class="updated fade"><p><strong>Inserted New Item</strong></div>';
 					}
 					elseif (isset($_POST['updateitem']))
 					{
-						$wpdb->update( $wpdb->prefix.'wsitems', $newitem, $id);
+						$wpdb->update( ws_db_prefix().'wsitems', $newitem, $id);
 						echo '<div id="message" class="updated fade"><p><strong>Item Updated</strong></div>';
 					}									 
 				}				
@@ -625,16 +633,16 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			{
 				$adminpage = 'items';
 				
-				$itemexist = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem'] . " AND scheduleid = " . $_GET['schedule']);
-				$itemday = $wpdb->get_row("SELECT * from " . $wpdb->prefix . "wsdays WHERE id = " . $itemexist->day . " AND scheduleid = " . $_GET['schedule']);
+				$itemexist = $wpdb->get_row("SELECT * from " . ws_db_prefix() . "wsitems WHERE id = " . $_GET['deleteitem'] . " AND scheduleid = " . $_GET['schedule']);
+				$itemday = $wpdb->get_row("SELECT * from " . ws_db_prefix() . "wsdays WHERE id = " . $itemexist->day . " AND scheduleid = " . $_GET['schedule']);
 				
 				if ($itemexist)
 				{
-					$wpdb->query("DELETE from " . $wpdb->prefix . "wsitems WHERE id = " . $_GET['deleteitem'] . " AND scheduleid = " . $_GET['schedule']);
+					$wpdb->query("DELETE from " . ws_db_prefix() . "wsitems WHERE id = " . $_GET['deleteitem'] . " AND scheduleid = " . $_GET['schedule']);
 					
 					if ($itemday->rows > 1)
 					{						
-						$othersonrow = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsitems WHERE day = " . $itemexist->day . " AND scheduleid = " . $_GET['schedule'] . " AND row = " . $itemexist->row);
+						$othersonrow = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsitems WHERE day = " . $itemexist->day . " AND scheduleid = " . $_GET['schedule'] . " AND row = " . $itemexist->row);
 						if (!$othersonrow)
 						{
 							if ($itemexist->row != $itemday->rows)
@@ -644,7 +652,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									$newrow = $i - 1;
 									$changerow = array("row" => $newrow);
 									$oldrow = array("row" => $i, "day" => $itemday->id);
-									$wpdb->update($wpdb->prefix . 'wsitems', $changerow, $oldrow);
+									$wpdb->update(ws_db_prefix() . 'wsitems', $changerow, $oldrow);
 								}
 							}
 							
@@ -652,7 +660,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							$newrow = $itemday->rows - 1;
 							$newdayrow = array("rows" => $newrow);
 							
-							$wpdb->update($wpdb->prefix . 'wsdays', $newdayrow, $dayid);
+							$wpdb->update(ws_db_prefix() . 'wsdays', $newdayrow, $dayid);
 						}
 					}	
 					echo '<div id="message" class="updated fade"><p><strong>Item Deleted</strong></div>';
@@ -667,7 +675,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					$daynamearray = array("name" => $_POST[$dayid]);
 					$dayidarray = array("id" => $dayid, "scheduleid" => $_POST['schedule']);
 					
-					$wpdb->update($wpdb->prefix . 'wsdays', $daynamearray, $dayidarray);
+					$wpdb->update(ws_db_prefix() . 'wsdays', $daynamearray, $dayidarray);
 				}					
 			}
 			
@@ -712,22 +720,22 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				
 				update_option($schedulename, $options);
 				
-				$catsresult = $wpdb->query("SELECT * from " . $wpdb->prefix . "wscategories where scheduleid = " . $schedule);
+				$catsresult = $wpdb->query("SELECT * from " . ws_db_prefix() . "wscategories where scheduleid = " . $schedule);
 						
 				if (!$catsresult)
 				{
-					$sqlstatement = "INSERT INTO " . $wpdb->prefix . "wscategories (`name`, `scheduleid`) VALUES 
+					$sqlstatement = "INSERT INTO " . ws_db_prefix() . "wscategories (`name`, `scheduleid`) VALUES 
 									('Default', " . $schedule . ")";
 					$result = $wpdb->query($sqlstatement);
 				}
 
-				$wpdb->wsdays = $wpdb->prefix.'wsdays';
+				$wpdb->wsdays = ws_db_prefix().'wsdays';
 										
-				$daysresult = $wpdb->query("SELECT * from " . $wpdb->prefix . "wsdays where scheduleid = " . $schedule);
+				$daysresult = $wpdb->query("SELECT * from " . ws_db_prefix() . "wsdays where scheduleid = " . $schedule);
 						
 				if (!$daysresult)
 				{
-					$sqlstatement = "INSERT INTO " . $wpdb->prefix . "wsdays (`id`, `name`, `rows`, `scheduleid`) VALUES
+					$sqlstatement = "INSERT INTO " . ws_db_prefix() . "wsdays (`id`, `name`, `rows`, `scheduleid`) VALUES
 									(1, 'Sun', 1, " . $schedule . "),
 									(2, 'Mon', 1, " . $schedule . "),
 									(3, 'Tue', 1, " . $schedule . "),
@@ -1137,7 +1145,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</form>
 				</div>
 				<div>
-					<?php $cats = $wpdb->get_results("SELECT count( i.id ) AS nbitems, c.name, c.id, c.backgroundcolor, c.scheduleid FROM " . $wpdb->prefix . "wscategories c LEFT JOIN " . $wpdb->prefix . "wsitems i ON i.category = c.id WHERE c.scheduleid = " . $schedule . " GROUP BY c.id");
+					<?php $cats = $wpdb->get_results("SELECT count( i.id ) AS nbitems, c.name, c.id, c.backgroundcolor, c.scheduleid FROM " . ws_db_prefix() . "wscategories c LEFT JOIN " . ws_db_prefix() . "wsitems i ON i.category = c.id WHERE c.scheduleid = " . $schedule . " GROUP BY c.id");
 					
 							if ($cats): ?>
 							  <table class='widefat' style='clear:none;width:400px;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
@@ -1205,7 +1213,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					<tr>
 					<td>Category</td>
 					<td><select style='width: 360px' name="category">
-					<?php $cats = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wscategories where scheduleid = " . $schedule . " ORDER by name");
+					<?php $cats = $wpdb->get_results("SELECT * from " . ws_db_prefix(). "wscategories where scheduleid = " . $schedule . " ORDER by name");
 					
 						foreach ($cats as $cat)
 						{
@@ -1228,7 +1236,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</tr>
 					<tr>
 					<td>Day</td><td><select style='width: 360px' name="day">
-					<?php $days = $wpdb->get_results("SELECT * from " . $wpdb->prefix. "wsdays where scheduleid = " . $schedule . " ORDER by id");
+					<?php $days = $wpdb->get_results("SELECT * from " . ws_db_prefix(). "wsdays where scheduleid = " . $schedule . " ORDER by id");
 					
 						foreach ($days as $day)
 						{
@@ -1331,7 +1339,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</form>
 				</div>
 				<div>
-				<?php $items = $wpdb->get_results("SELECT d.name as dayname, i.id, i.name, i.backgroundcolor, i.day, i.starttime FROM " . $wpdb->prefix . "wsitems as i, " . $wpdb->prefix . "wsdays as d WHERE i.day = d.id 
+				<?php $items = $wpdb->get_results("SELECT d.name as dayname, i.id, i.name, i.backgroundcolor, i.day, i.starttime FROM " . ws_db_prefix() . "wsitems as i, " . ws_db_prefix() . "wsdays as d WHERE i.day = d.id 
 								and i.scheduleid = " . $schedule . " and d.scheduleid = " . $_GET['schedule'] . " ORDER by day, starttime, name");
 					
 							if ($items): ?>
@@ -1413,7 +1421,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 						if ( function_exists('wp_nonce_field') )
 							wp_nonce_field('wspp-config');
 							
-						$days = $wpdb->get_results("SELECT * from " . $wpdb->prefix . "wsdays WHERE scheduleid = " . $schedule . " ORDER by id");
+						$days = $wpdb->get_results("SELECT * from " . ws_db_prefix() . "wsdays WHERE scheduleid = " . $schedule . " ORDER by id");
 						
 						if ($days):
 						?>
@@ -1593,7 +1601,7 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 	}
 
 
- 	$sqldays = "SELECT * from " .  $wpdb->prefix . "wsdays where scheduleid = " . $scheduleid;
+ 	$sqldays = "SELECT * from " .  ws_db_prefix() . "wsdays where scheduleid = " . $scheduleid;
 	
 	if ($daylist != "")
 		$sqldays .= " AND id in (" . $daylist . ") ORDER BY FIELD(id, " . $daylist. ")";
@@ -1635,8 +1643,8 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 			if ($layout == 'vertical')
 				$output .= "</tr>\n";
 
-			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid, i.backgroundcolor as itemcolor, c.backgroundcolor as categorycolor from " . $wpdb->prefix . 
-						"wsitems i, " . $wpdb->prefix . "wscategories c WHERE day = " . $day->id . 			
+			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid, i.backgroundcolor as itemcolor, c.backgroundcolor as categorycolor from " . ws_db_prefix() . 
+						"wsitems i, " . ws_db_prefix() . "wscategories c WHERE day = " . $day->id . 			
 						" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
 						$endtime . " ORDER by starttime";
 
@@ -1815,7 +1823,7 @@ function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timed
 
 	$output .= "<div class='ws-schedule' id='ws-schedule<?php echo $scheduleid; ?>'>\n";
 		
- 	$sqldays = "SELECT * from " .  $wpdb->prefix . "wsdays where scheduleid = " . $scheduleid;
+ 	$sqldays = "SELECT * from " .  ws_db_prefix() . "wsdays where scheduleid = " . $scheduleid;
 	
 	if ($daylist != "")
 		$sqldays .= " AND id in (" . $daylist . ") ORDER BY FIELD(id, " . $daylist. ")";
@@ -1830,8 +1838,8 @@ function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timed
 		{
 			$output .= "<tr><td colspan='3'>" . $day->name . "</td></tr>\n";
 		
-			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . $wpdb->prefix . 
-						"wsitems i, " . $wpdb->prefix . "wscategories c WHERE day = " . $day->id . 			
+			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . ws_db_prefix() . 
+						"wsitems i, " . ws_db_prefix() . "wscategories c WHERE day = " . $day->id . 			
 						" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
 						$endtime . " ORDER by starttime";
 
@@ -1971,7 +1979,7 @@ function ws_day_list_func( $atts ) {
     //fetch results
     global $wpdb;
 
-    $schedule_query = 'SELECT * from ' . $wpdb->prefix . 
+    $schedule_query = 'SELECT * from ' . ws_db_prefix() . 
                 'wsitems WHERE day = ' . $today . 			
                 ' AND scheduleid = ' . $schedule . ' ORDER by starttime ASC LIMIT 0, ' . $max_items;
 
@@ -1993,7 +2001,7 @@ function ws_day_list_func( $atts ) {
 
             $output .= '<li>';
             if ( !empty( $schedule_item->address ) ) {
-                echo '<a href="' . $schedule_item->address . '">';
+                $output .= '<a href="' . $schedule_item->address . '">';
             }
             $output .= $start_hour . ' - ' . $item_name;
 
@@ -2159,7 +2167,7 @@ class WSTodayScheduleWidget extends WP_Widget {
 		//fetch results
 		global $wpdb;
 		
-		$schedule_query = 'SELECT * from ' . $wpdb->prefix . 
+		$schedule_query = 'SELECT * from ' . ws_db_prefix() . 
            			'wsitems WHERE day = ' . $today . 			
 					' AND scheduleid = ' . $schedule_id . ' ORDER by starttime ASC LIMIT 0, ' . $max_items;
         
