@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.7.5 =
+* Added 24-hour display mode with colon instead of "h" character
+
 = 2.7.4 =
 * Fixed bug with link output in weekly schedule grid
 
