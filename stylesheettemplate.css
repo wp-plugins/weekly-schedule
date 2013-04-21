@@ -20,7 +20,8 @@
 	width: 50px;
 }
 .ws-schedule table.verticalheader {
-	width: 100px;
+    float: left;
+    width: 100px;
 }
 .ws-schedule table.vertical1 {
 	width: 100px;

@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.7.5
+Version: 2.8
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
@@ -22,6 +22,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License    
 along with this program; if not, write to the Free Software    
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA*/
+
+$ws_pagehooktop = "";
+$ws_pagehookmoderate = "";
+$ws_pagehooksettingssets = "";
+$ws_pagehookstylesheet = "";
+$ws_pagehookreciprocal = "";
+
+$wsstylesheet = "";
+
+define('WEEKLY_SCHEDULE_ADMIN_PAGE_NAME', 'weekly-schedule');
 
 function ws_db_prefix() {
 		global $wpdb;
@@ -179,6 +189,9 @@ function ws_install() {
 		$genoptions['includestylescript'] = "";
 		$genoptions['frontpagestylescript'] = false;
 		$genoptions['version'] = "2.7";
+
+        $stylesheetlocation = plugins_url( $genoptions['stylesheet'], __FILE__ );
+        $genoptions['fullstylesheet'] = file_get_contents( $stylesheetlocation );
 		
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 	} elseif ( $genoptions['version'] == '2.0' ) {
@@ -215,14 +228,33 @@ function ws_install() {
 }
 register_activation_hook( __FILE__, 'ws_install');
 
+function ws_uninstall() {
+    $genoptions = get_option('WeeklyScheduleGeneral');
+
+    if ($genoptions != '')
+    {
+        if ( isset( $genoptions['stylesheet'] ) && isset( $genoptions['fullstylesheet'] ) && !empty( $genoptions['stylesheet'] ) && empty( $genoptions['fullstylesheet'] ) )
+        {
+            $stylesheetlocation = plugins_url( $genoptions['stylesheet'], __FILE__ );
+            $genoptions['fullstylesheet'] = file_get_contents( $stylesheetlocation );
+
+            update_option('WeeklyScheduleGeneral', $genoptions);
+        }
+    }
+}
+
+register_activation_hook( __FILE__, 'ws_uninstall');
+
 if ( ! class_exists( 'WS_Admin' ) ) {
 	class WS_Admin {		
 		function add_config_page() {
-			global $wpdb;
-			if ( function_exists('add_submenu_page') ) {
-				add_options_page('Weekly Schedule for Wordpress', 'Weekly Schedule', 9, basename(__FILE__), array('WS_Admin','config_page'));
-				add_filter( 'plugin_action_links', array( 'WS_Admin', 'filter_plugin_actions'), 10, 2 );
-							}
+            global $wpdb, $ws_pagehooktop, $ws_pagehookgeneraloptions, $ws_pagehookstylesheet;
+                $ws_pagehooktop = add_menu_page('Weekly Schedule - ' . __('General Options', 'weekly-schedule'), 'Weekly Schedule', 'manage_options', WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, array('WS_Admin', 'config_page'), plugins_url('icons/calendar-icon-16.png', __FILE__ ) );
+                $ws_pagehookgeneraloptions = add_submenu_page( WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, 'Weekly Schedule - ' . __('General Options', 'weekly-schedule'), __('General Options', 'weekly-schedule'), 'manage_options', WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, array('WS_Admin', 'config_page') );
+                $ws_pagehookstylesheet = add_submenu_page( WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, 'Weekly Schedule - ' . __('Stylesheet', 'weekly-schedule') , __('Stylesheet', 'weekly-schedule'), 'manage_options', 'weekly-schedule-stylesheet', array('WS_Admin','stylesheet_config_page'));
+
+            //add_options_page('Weekly Schedule for Wordpress', 'Weekly Schedule', 9, basename(__FILE__), array('WS_Admin','config_page'));
+            add_filter( 'plugin_action_links', array( 'WS_Admin', 'filter_plugin_actions'), 10, 2 );
 		} // end add_WS_config_page()
 
 		function filter_plugin_actions( $links, $file ){
@@ -236,6 +268,42 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			}
 			return $links;
 		}
+
+        function stylesheet_config_page() {
+            $genoptions = get_option('WeeklyScheduleGeneral');
+
+            if ( isset( $_POST['resetstyle'] ) ) {
+                $stylesheetlocation = plugins_url( 'stylesheettemplate.css', __FILE__ );
+
+                $genoptions['fullstylesheet'] = @file_get_contents( $stylesheetlocation );
+
+                update_option('WeeklyScheduleGeneral', $genoptions);
+                echo '<div id="warning" class="updated fade"><p><strong>Reset stylesheet to default.</strong></div>';
+            }
+
+            if ( isset( $_POST['submitstyle'] ) ) {
+                $genoptions['fullstylesheet'] = $_POST['fullstylesheet'];
+
+                update_option('WeeklyScheduleGeneral', $genoptions);
+            }
+
+            ?>
+            <div class="wrap">
+				<h2>Weekly Schedule Stylesheet Editor</h2>
+				<a href="http://yannickcorner.nayanna.biz/wordpress-plugins/weekly-schedule/" target="weeklyschedule"><img src="<?php echo plugins_url('/icons/btn_donate_LG.gif', __FILE__); ?>" /></a> | <a target='wsinstructions' href='http://wordpress.org/extend/plugins/weekly-schedule/installation/'>Installation Instructions</a> | <a href='http://wordpress.org/extend/plugins/weekly-schedule/faq/' target='llfaq'>FAQ</a> | <a href='http://yannickcorner.nayanna.biz/contact-me'>Contact the Author</a><br />
+
+            <p>If the stylesheet editor is empty after upgrading, reset to the default stylesheet using the button below or copy/paste your backup stylesheet into the editor.</p>
+				<form name='wsadmingenform' action="<?php echo add_query_arg( 'page', 'weekly-schedule-stylesheet', admin_url( 'admin.php' ) ); ?>" method="post" id="ws-conf">
+				<?php
+				if ( function_exists('wp_nonce_field') )
+                    wp_nonce_field('wspp-config');
+					?>
+                    <textarea name='fullstylesheet' id='fullstylesheet' style='font-family:Courier' rows="30" cols="100"><?php echo stripslashes($genoptions['fullstylesheet']);?></textarea>
+                    <div><input type="submit" name="submitstyle" value="<?php _e('Submit','weekly-schedule'); ?>" /><span style='padding-left: 650px'><input type="submit" name="resetstyle" value="<?php _e('Reset to default','weekly-schedule'); ?>" /></span></div>
+                </form>
+            </div>
+            <?php
+        }
 
 		function config_page() {
 			global $dlextensions;
@@ -757,7 +825,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			?>
 			<div class="wrap">
 				<h2>Weekly Schedule Configuration</h2>
-				<a href="http://yannickcorner.nayanna.biz/wordpress-plugins/weekly-schedule/" target="weeklyschedule"><img src="<?php echo $wspluginpath; ?>/icons/btn_donate_LG.gif" /></a> | <a target='wsinstructions' href='http://wordpress.org/extend/plugins/weekly-schedule/installation/'>Installation Instructions</a> | <a href='http://wordpress.org/extend/plugins/weekly-schedule/faq/' target='llfaq'>FAQ</a> | <a href='http://yannickcorner.nayanna.biz/contact-me'>Contact the Author</a><br /><br />
+				<a href="http://yannickcorner.nayanna.biz/wordpress-plugins/weekly-schedule/" target="weeklyschedule"><img src="<?php echo plugins_url('/icons/btn_donate_LG.gif', __FILE__); ?>" /></a> | <a target='wsinstructions' href='http://wordpress.org/extend/plugins/weekly-schedule/installation/'>Installation Instructions</a> | <a href='http://wordpress.org/extend/plugins/weekly-schedule/faq/' target='llfaq'>FAQ</a> | <a href='http://yannickcorner.nayanna.biz/contact-me'>Contact the Author</a><br /><br />
 				
 				<form name='wsadmingenform' action="<?php echo add_query_arg( 'page', 'weekly-schedule', admin_url( 'options-general.php' ) ); ?>" method="post" id="ws-conf">
 				<?php
@@ -1167,7 +1235,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 								<td style='background: #FFF;text-align:right'><?php echo $cat->nbitems; ?></td>
 								<?php if ($cat->nbitems == 0): ?>
 								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deletecat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>' 
-								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete this category '%s'\n  'Cancel' to stop, 'OK' to delete."), $cat->name )) . "') ) { return true;}return false;\"" ?>><img src='<?php echo $wspluginpath; ?>/icons/delete.png' /></a></td>
+								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete this category '%s'\n  'Cancel' to stop, 'OK' to delete."), $cat->name )) . "') ) { return true;}return false;\"" ?>><img src='<?php echo plugins_url('/icons/delete.png', __FILE__ ); ?>' /></a></td>
 								<?php else: ?>
 								<td style='background: #FFF'></td>
 								<?php endif; ?>
@@ -1408,7 +1476,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
                                 }
 								?></td>
 								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deleteitem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>' 
-								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete the item '%s'\n  'Cancel' to stop, 'OK' to delete."), $item->name )) . "') ) { return true;}return false;\""; ?>><img src='<?php echo $wspluginpath; ?>/icons/delete.png' /></a></td>
+								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete the item '%s'\n  'Cancel' to stop, 'OK' to delete."), $item->name )) . "') ) { return true;}return false;\""; ?>><img src='<?php echo plugins_url('/icons/delete.png', __FILE__ ); ?>' /></a></td>
 								</tr>
 							  <?php endforeach; ?>				
 							  
@@ -2038,9 +2106,9 @@ function ws_day_list_func( $atts ) {
     return $output;
 }
 
-add_filter('the_posts', 'ws_conditionally_add_scripts_and_styles'); // the_posts gets triggered before wp_head
+add_filter('the_posts', 'ws_conditional_header'); // the_posts gets triggered before wp_head
 
-function ws_conditionally_add_scripts_and_styles($posts){
+function ws_conditional_header($posts){
 	if (empty($posts)) return $posts;
 	
 	$load_jquery = false;
@@ -2138,6 +2206,53 @@ function ws_conditionally_add_scripts_and_styles($posts){
 	 
 	return $posts;
 }
+
+add_filter('the_posts', 'ws_conditionally_add_scripts_and_styles');
+
+function ws_conditionally_add_scripts_and_styles( $posts ) {
+    if ( empty( $posts ) ) return $posts;
+
+    $load_style = false;
+
+    $genoptions = get_option('WeeklyScheduleGeneral');
+
+    if ( is_admin() ) {
+        $load_jquery = false;
+        $load_thickbox = false;
+        $load_style = false;
+    } else {
+        foreach ($posts as $post) {
+            $linklibrarypos = stripos( $post->post_content, 'weekly-schedule', 0 );
+            if ( $linklibrarypos !== false ) {
+                 $load_style = true;
+            }
+        }
+    }
+
+    global $wsstylesheet;
+    if ( $load_style ) {
+        $wsstylesheet = true;
+    } else {
+        $wsstylesheet = false;
+    }
+
+    return $posts;
+}
+
+add_action( 'wp_head', 'ws_header_output' );
+
+function ws_header_output() {
+    global $wsstylesheet;
+    $genoptions = get_option('WeeklyScheduleGeneral');
+
+    if ( $wsstylesheet ) {
+        echo "<style id='WeeklyScheduleStyle' type='text/css'>\n";
+        echo stripslashes($genoptions['fullstylesheet']);
+        echo "</style>\n";
+    }
+}
+
+
 
 /* Register widgets */
 add_action( 'widgets_init', 'ws_register_widget' );
