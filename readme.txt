@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.8.1 =
+* Added missing icon for menu
+
 = 2.8 =
 * Added stylesheet editor to avoid having to always restore the plugin's stylesheet after upgrades
 
