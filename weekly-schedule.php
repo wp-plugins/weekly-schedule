@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.8.1
+Version: 2.8.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
@@ -262,7 +262,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			static $this_plugin;
 			if ( ! $this_plugin ) $this_plugin = plugin_basename(__FILE__);
 			if ( $file == $this_plugin ){
-				$settings_link = '<a href="options-general.php?page=weekly-schedule.php">' . __('Settings') . '</a>';
+				$settings_link = '<a href="options-general.php?page=weekly-schedule">' . __('Settings') . '</a>';
 				
 				array_unshift( $links, $settings_link ); // before other links
 			}
@@ -879,7 +879,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									   <option value="<?php echo $counter ?>" <?php if ($schedule == $counter) echo 'SELECTED';?>>Schedule <?php echo $counter ?><?php if ($tempoptions != "") echo " (" . $tempoptions['schedulename'] . ")"; ?></option>
 								<?php endfor; ?>
 							</SELECT>
-							<INPUT type="button" name="go" value="Go!" onClick="window.location= '?page=weekly-schedule.php&amp;settings=<?php echo $adminpage; ?>&amp;schedule=' + document.scheduleselection.schedulelist.options[document.scheduleselection.schedulelist.selectedIndex].value">						
+							<INPUT type="button" name="go" value="Go!" onClick="window.location= '?page=weekly-schedule&amp;settings=<?php echo $adminpage; ?>&amp;schedule=' + document.scheduleselection.schedulelist.options[document.scheduleselection.schedulelist.selectedIndex].value">						
 							Copy from: 
 							<SELECT name="copysource" style='width: 300px'>
 							<?php if ($genoptions['numberschedules'] == '') $numberofschedules = 2; else $numberofschedules = $genoptions['numberschedules'];
@@ -891,7 +891,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									   <?php endif; 
 								    endfor; ?>
 							</SELECT>
-							<INPUT type="button" name="copy" value="Copy!" onClick="window.location= '?page=weekly-schedule.php&amp;copy=<?php echo $schedule; ?>&source=' + document.scheduleselection.copysource.options[document.scheduleselection.copysource.selectedIndex].value">							
+							<INPUT type="button" name="copy" value="Copy!" onClick="window.location= '?page=weekly-schedule&amp;copy=<?php echo $schedule; ?>&source=' + document.scheduleselection.copysource.options[document.scheduleselection.copysource.selectedIndex].value">							
 					<br />
 					<br />
 					<table class='widefat' style='clear:none;width:100%;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
@@ -922,7 +922,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				<fieldset style='border:1px solid #CCC;padding:10px'>
 				<legend style='padding: 0 5px 0 5px;'><strong>Settings for Schedule <?php echo $schedule; ?> - <?php echo $options['schedulename']; ?></strong></legend>	
 				<?php if (($adminpage == "") || ($adminpage == "general")): ?>
-				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>"><strong>General Settings</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
+				<a href="?page=weekly-schedule&amp;settings=general&amp;schedule=<?php echo $schedule; ?>"><strong>General Settings</strong></a> | <a href="?page=weekly-schedule&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
 				<form name="wsadminform" action="<?php echo add_query_arg( 'page', 'weekly-schedule', admin_url( 'options-general.php' ) ); ?>" method="post" id="ws-config">
 				<?php
 					if ( function_exists('wp_nonce_field') )
@@ -1188,7 +1188,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 					</fieldset>
 				<?php /* --------------------------------------- Categories --------------------------------- */ ?>
 				<?php elseif ($adminpage == "categories"): ?>
-				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Schedule Categories</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
+				<a href="?page=weekly-schedule&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Schedule Categories</strong></a> | <a href="?page=weekly-schedule&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
 				<div style='float:left;margin-right: 15px'>
 					<form name="wscatform" action="" method="post" id="ws-config">
 					<?php
@@ -1230,11 +1230,11 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 							  <?php foreach($cats as $cat): ?>
 								<tr>
 								<td class='name column-name' style='background: #FFF'><?php echo $cat->id; ?></td>
-								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;editcat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>'><strong><?php echo $cat->name; ?></strong></a></td>
+								<td style='background: #FFF'><a href='?page=weekly-schedule&amp;editcat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>'><strong><?php echo $cat->name; ?></strong></a></td>
 								<td style='background: <?php echo $cat->backgroundcolor != NULL ? $cat->backgroundcolor : '#FFF'; ?>;text-align:right'></td>
 								<td style='background: #FFF;text-align:right'><?php echo $cat->nbitems; ?></td>
 								<?php if ($cat->nbitems == 0): ?>
-								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deletecat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>' 
+								<td style='background:#FFF'><a href='?page=weekly-schedule&amp;deletecat=<?php echo $cat->id; ?>&schedule=<?php echo $schedule; ?>' 
 								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete this category '%s'\n  'Cancel' to stop, 'OK' to delete."), $cat->name )) . "') ) { return true;}return false;\"" ?>><img src='<?php echo plugins_url('/icons/delete.png', __FILE__ ); ?>' /></a></td>
 								<?php else: ?>
 								<td style='background: #FFF'></td>
@@ -1251,7 +1251,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</div>
 				<?php /* --------------------------------------- Items --------------------------------- */ ?>
 				<?php elseif ($adminpage == "items"): ?>
-				<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Schedule Items</strong></a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
+				<a href="?page=weekly-schedule&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule&amp;settings=items&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Schedule Items</strong></a> | <a href="?page=weekly-schedule&amp;settings=days&amp;schedule=<?php echo $schedule; ?>">Manage Days Labels</a><br /><br />
 				<div style='float:left;margin-right: 15px;width: 500px;'>
 					<form name="wsitemsform" action="" method="post" id="ws-config">
 					<?php
@@ -1428,8 +1428,8 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 
 							  <?php foreach($items as $item): ?>
 								<tr>
-								<td class='name column-name' style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo $item->id; ?></strong></a></td>
-								<td style='background: #FFF'><a href='?page=weekly-schedule.php&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo stripslashes($item->name); ?></strong></a></td>
+								<td class='name column-name' style='background: #FFF'><a href='?page=weekly-schedule&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo $item->id; ?></strong></a></td>
+								<td style='background: #FFF'><a href='?page=weekly-schedule&amp;edititem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>'><strong><?php echo stripslashes($item->name); ?></strong></a></td>
 
 								<td style='background: <?php echo $item->backgroundcolor ? $item->backgroundcolor : '#FFF'; ?>'></td>
 								<td style='background: #FFF;text-align:right'><?php echo $item->dayname; ?></td>
@@ -1475,7 +1475,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 									echo $hour . ":" . $minutes . $timeperiod . "\n";
                                 }
 								?></td>
-								<td style='background:#FFF'><a href='?page=weekly-schedule.php&amp;deleteitem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>' 
+								<td style='background:#FFF'><a href='?page=weekly-schedule&amp;deleteitem=<?php echo $item->id; ?>&amp;schedule=<?php echo $schedule; ?>' 
 								<?php echo "onclick=\"if ( confirm('" . esc_js(sprintf( __("You are about to delete the item '%s'\n  'Cancel' to stop, 'OK' to delete."), $item->name )) . "') ) { return true;}return false;\""; ?>><img src='<?php echo plugins_url('/icons/delete.png', __FILE__ ); ?>' /></a></td>
 								</tr>
 							  <?php endforeach; ?>				
@@ -1486,7 +1486,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 				</div>
 				<?php elseif ($adminpage == "days"): ?>
 				<div>
-					<a href="?page=weekly-schedule.php&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule.php&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule.php&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule.php&amp;settings=days&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Days Labels</strong></a><br /><br />
+					<a href="?page=weekly-schedule&amp;settings=general&amp;schedule=<?php echo $schedule; ?>">General Settings</a> | <a href="?page=weekly-schedule&amp;settings=categories&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Categories</a> | <a href="?page=weekly-schedule&amp;settings=items&amp;schedule=<?php echo $schedule; ?>">Manage Schedule Items</a> | <a href="?page=weekly-schedule&amp;settings=days&amp;schedule=<?php echo $schedule; ?>"><strong>Manage Days Labels</strong></a><br /><br />
 					<div>
 						<form name="wsdaysform" action="" method="post" id="ws-config">
 						<?php
