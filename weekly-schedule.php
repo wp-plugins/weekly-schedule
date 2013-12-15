@@ -2184,14 +2184,6 @@ function ws_conditional_header($posts){
 				}
 			}
 		}
-	
-	if ($load_style)
-	{		
-		if ($genoptions == "")
-			$genoptions['stylesheet'] = 'stylesheet.css';
-			
-		wp_enqueue_style('weeklyschedulestyle', get_bloginfo('wpurl') . '/wp-content/plugins/weekly-schedule/' . $genoptions['stylesheet']);	
-	}
  
 	if ($load_jquery)
 	{
