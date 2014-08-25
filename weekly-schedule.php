@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.8.2
+Version: 2.8.3
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
@@ -44,16 +44,6 @@ function ws_db_prefix() {
 function ws_install() {
 	global $wpdb;
 
-	$charset_collate = '';
-	if ( version_compare(mysql_get_server_info(), '4.1.0', '>=') ) {
-		if (!empty($wpdb->charset)) {
-			$charset_collate .= " DEFAULT CHARACTER SET $wpdb->charset";
-		}
-		if (!empty($wpdb->collate)) {
-			$charset_collate .= " COLLATE $wpdb->collate";
-		}
-	}
-	
 	$wpdb->wscategories = ws_db_prefix() .'wscategories';
 
 	$result = $wpdb->query("
@@ -63,7 +53,7 @@ function ws_install() {
 				`scheduleid` int(10) default NULL,
 				`backgroundcolor` varchar(7) NULL,
 				PRIMARY KEY  (`id`)
-				) $charset_collate"); 
+				) ");
 				
 	$catsresult = $wpdb->query("
 			SELECT * from `$wpdb->wscategories`");
@@ -82,7 +72,7 @@ function ws_install() {
 				`rows` int(10) unsigned NOT NULL,
 				`scheduleid` int(10) NOT NULL default '0',
 				PRIMARY KEY  (`id`, `scheduleid`)
-				)  $charset_collate"); 
+				) ");
 				
 	$daysresult = $wpdb->query("
 			SELECT * from `$wpdb->wsdays`");
@@ -101,21 +91,21 @@ function ws_install() {
 	$wpdb->wsitems = ws_db_prefix().'wsitems';
     
 	$item_table_creation_query = "
-			CREATE TABLE `$wpdb->wsitems` (
-				`id` int(10) unsigned NOT NULL auto_increment,
-				`name` varchar(255),
-				`description` text NOT NULL,
-				`address` varchar(255) NOT NULL,
-				`starttime` float unsigned NOT NULL,
-				`duration` float NOT NULL,
-				`row` int(10) unsigned NOT NULL,
-				`day` int(10) unsigned NOT NULL,
-				`category` int(10) unsigned NOT NULL,
-				`scheduleid` int(10) NOT NULL default '0',
-                `backgroundcolor` varchar(7) NULL,
-                `titlecolor` varchar(7) NULL,
-				PRIMARY KEY  (`id`,`scheduleid`)
-			) $charset_collate";
+			CREATE TABLE " . $wpdb->wsitems . " (
+				id int(10) unsigned NOT NULL auto_increment,
+				name varchar(255),
+				description text NOT NULL,
+				address varchar(255) NOT NULL,
+				starttime float unsigned NOT NULL,
+				duration float NOT NULL,
+				row int(10) unsigned NOT NULL,
+				day int(10) unsigned NOT NULL,
+				category int(10) unsigned NOT NULL,
+				scheduleid int(10) NOT NULL default '0',
+                backgroundcolor varchar(7) NULL,
+                titlecolor varchar(7) NULL,
+				UNIQUE KEY  ( id, scheduleid )
+			);";
     
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $item_table_creation_query );
@@ -153,6 +143,7 @@ function ws_install() {
 			$genoptions['debugmode'] = false;
 			$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
 			$genoptions['frontpagestylescript'] = false;
+			$genoptions['includescriptcss'] = '';
 			$genoptions['version'] = "2.0";
 		
 			update_option('WeeklyScheduleGeneral', $genoptions);		
@@ -196,7 +187,7 @@ function ws_install() {
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 	} elseif ( $genoptions['version'] == '2.0' ) {
 		$genoptions['version'] = '2.3';
-		$wpdb->query("ALTER TABLE `" . ws_db_prefix() . "wsdays` CHANGE `name` `name` VARCHAR( 64 ) " . $charset_collate . " NOT NULL");
+		$wpdb->query("ALTER TABLE " . ws_db_prefix() . "wsdays CHANGE name name VARCHAR( 64 )  NOT NULL");
 		
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 	} elseif ( $genoptions['version'] == '2.3' ) {
@@ -245,16 +236,20 @@ function ws_uninstall() {
 
 register_activation_hook( __FILE__, 'ws_uninstall');
 
-if ( ! class_exists( 'WS_Admin' ) ) {
-	class WS_Admin {		
+if ( is_admin() && ! class_exists( 'WS_Admin' ) ) {
+	class WS_Admin {
+		function WS_Admin() {
+			// adds the menu item to the admin interface
+			add_action('admin_menu', array( $this, 'add_config_page'));
+		}
 		function add_config_page() {
             global $wpdb, $ws_pagehooktop, $ws_pagehookgeneraloptions, $ws_pagehookstylesheet;
-                $ws_pagehooktop = add_menu_page('Weekly Schedule - ' . __('General Options', 'weekly-schedule'), 'Weekly Schedule', 'manage_options', WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, array('WS_Admin', 'config_page'), plugins_url('icons/calendar-icon-16.png', __FILE__ ) );
-                $ws_pagehookgeneraloptions = add_submenu_page( WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, 'Weekly Schedule - ' . __('General Options', 'weekly-schedule'), __('General Options', 'weekly-schedule'), 'manage_options', WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, array('WS_Admin', 'config_page') );
-                $ws_pagehookstylesheet = add_submenu_page( WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, 'Weekly Schedule - ' . __('Stylesheet', 'weekly-schedule') , __('Stylesheet', 'weekly-schedule'), 'manage_options', 'weekly-schedule-stylesheet', array('WS_Admin','stylesheet_config_page'));
+                $ws_pagehooktop = add_menu_page('Weekly Schedule - ' . __('General Options', 'weekly-schedule'), 'Weekly Schedule', 'manage_options', WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, array( $this, 'config_page'), plugins_url('icons/calendar-icon-16.png', __FILE__ ) );
+                $ws_pagehookgeneraloptions = add_submenu_page( WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, 'Weekly Schedule - ' . __('General Options', 'weekly-schedule'), __('General Options', 'weekly-schedule'), 'manage_options', WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, array( $this, 'config_page') );
+                $ws_pagehookstylesheet = add_submenu_page( WEEKLY_SCHEDULE_ADMIN_PAGE_NAME, 'Weekly Schedule - ' . __('Stylesheet', 'weekly-schedule') , __('Stylesheet', 'weekly-schedule'), 'manage_options', 'weekly-schedule-stylesheet', array( $this,'stylesheet_config_page'));
 
             //add_options_page('Weekly Schedule for Wordpress', 'Weekly Schedule', 9, basename(__FILE__), array('WS_Admin','config_page'));
-            add_filter( 'plugin_action_links', array( 'WS_Admin', 'filter_plugin_actions'), 10, 2 );
+            add_filter( 'plugin_action_links', array( $this, 'filter_plugin_actions'), 10, 2 );
 		} // end add_WS_config_page()
 
 		function filter_plugin_actions( $links, $file ){
@@ -309,7 +304,7 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			global $dlextensions;
 			global $wpdb;
 			
-			$adminpage == "";
+			$adminpage = "";
 			
 			if ( isset($_GET['schedule']) ) {
 				$schedule = $_GET['schedule'];				
@@ -381,8 +376,14 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			if ( isset($_POST['submit']) ) {
 				if (!current_user_can('manage_options')) die(__('You cannot edit the Weekly Schedule for WordPress options.'));
 				check_admin_referer('wspp-config');
-				
-				
+
+				if ( isset( $_GET['schedule'] ) ) {
+					$schedulename = 'WS_PP' . $_GET['schedule'];
+				} else {
+					$schedulename = 'WS_PP1';
+				}
+
+				$options = get_option( $schedulename );
 				
 				if ($_POST['timedivision'] != $options['timedivision'] && $_POST['timedivision'] == "3.0")
 				{
@@ -812,11 +813,12 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 			
 			if ($genoptions == "")
 			{			
-				$genoptions['stylesheet'] = $upgradeoptions['stylesheet'];
+				$genoptions['stylesheet'] = '';
 				$genoptions['numberschedules'] = 2;
 				$genoptions['debugmode'] = false;
-				$genoptions['includestylescript'] = $upgradeoptions['includestylescript'];
+				$genoptions['includestylescript'] = '';
 				$genoptions['frontpagestylescript'] = false;
+				$genoptions['includescriptcss'] = '';
 				$genoptions['version'] = "2.4";
 		
 				update_option('WeeklyScheduleGeneral', $genoptions);	
@@ -1522,11 +1524,14 @@ if ( ! class_exists( 'WS_Admin' ) ) {
 		} // end config_page()
 
 	} // end class WS_Admin
+
+	$my_ws_admin = new WS_Admin;
 } //endif
 
 function get_wsdays(){	}
 
 function ws_library_func($atts) {
+	$schedule = 1;
 	extract(shortcode_atts(array(
 		'schedule' => ''
 	), $atts));
@@ -1553,6 +1558,8 @@ function ws_library_func($atts) {
 }
 
 function ws_library_flat_func($atts) {
+	$schedule = 1;
+
 	extract(shortcode_atts(array(
 		'schedule' => ''
 	), $atts));
@@ -1755,9 +1762,9 @@ function ws_library($scheduleid = 1, $starttime = 19, $endtime = 22, $timedivisi
 						$columns -= $columns;
 						
 						if ($layout == 'horizontal')
-							$continue .= "id='continueright' ";
+							$continue = "id='continueright' ";
 						elseif ($layout == 'vertical')
-							$continue .= "id='continuedown' ";
+							$continue = "id='continuedown' ";
 					}
 					else
 					{					
@@ -1933,7 +1940,7 @@ function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timed
 					
 					if ( $timeformat == '24hours' || $timeformat == '24hourscolon' )
 						$hour = floor($item->starttime);
-					elseif ($options['timeformat'] == '12hours')
+					elseif ( $timeformat == '12hours')
 					{
 						if ($item->starttime < 12)
 						{
@@ -1962,11 +1969,11 @@ function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timed
 					else
 						$minutes = "00";
 														
-					if ($options['timeformat'] == '24hours') {
+					if ($timeformat == '24hours') {
 						$output .= "<td>" . $hour . "h" . $minutes . " - ";
-                    } elseif ($options['timeformat'] == '24hourscolon') {
+                    } elseif ($timeformat == '24hourscolon') {
                         $output .= "<td>" . $hour . ":" . $minutes . " - ";
-                    } elseif ($options['timeformat'] == '12hours') {
+                    } elseif ($timeformat == '12hours') {
 						$output .= "<td>" . $hour . ":" . $minutes . $timeperiod . " - ";
                     }
 						
@@ -1974,7 +1981,7 @@ function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timed
 					
 					if ( $timeformat == '24hours' || $timeformat == '24hourscolon' )
 						$hour = floor($endtime);
-					elseif ($options['timeformat'] == '12hours')
+					elseif ($timeformat == '12hours')
 					{
 						if ($endtime < 12)
 						{
@@ -2042,9 +2049,6 @@ function ws_library_flat($scheduleid = 1, $starttime = 19, $endtime = 22, $timed
 
 $version = "1.0";
 
-// adds the menu item to the admin interface
-add_action('admin_menu', array('WS_Admin','add_config_page'));
-
 add_shortcode('weekly-schedule', 'ws_library_func');
 
 add_shortcode('flat-weekly-schedule', 'ws_library_flat_func');
@@ -2052,6 +2056,10 @@ add_shortcode('flat-weekly-schedule', 'ws_library_flat_func');
 add_shortcode( 'daily-weekly-schedule', 'ws_day_list_func' );
 
 function ws_day_list_func( $atts ) {
+	$schedule = 1;
+	$max_items = 5;
+	$empty_msg = 'No Items Found';
+
     extract(shortcode_atts(array(
 		'schedule' => 1,
         'max_items' => 5,
@@ -2172,7 +2180,7 @@ function ws_conditional_header($posts){
 			}
 		}
 			
-		if ($genoptions['includescriptcss'] != '')
+		if ( isset( $genoptions['includescriptcss'] ) && !empty( $genoptions['includescriptcss'] ) )
 		{
 			$pagelist = explode (',', $genoptions['includescriptcss']);
 			foreach($pagelist as $pageid) {
@@ -2276,6 +2284,11 @@ class WSTodayScheduleWidget extends WP_Widget {
 	 */
 	public function widget( $args, $instance ) {
         global $wp_locale;
+		$before_widget = '';
+		$before_title = '';
+		$after_title = '';
+		$after_widget = '';
+
         extract( $args );	  
 	  
         $title = apply_filters( 'widget_title', $instance['title'] );

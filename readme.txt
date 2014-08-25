@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.8.3 =
+* Corrected PHP warnings
+
 = 2.8.2 =
 * Fixed problems with permissions when trying to edit schedule categories and items
 
