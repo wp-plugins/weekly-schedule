@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.8.4 =
+* Added option to select user access level required to editor weekly schedule content (can only be configured by admin)
+
 = 2.8.3 =
 * Corrected PHP warnings
 
