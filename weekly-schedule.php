@@ -114,6 +114,7 @@ function ws_new_network_site( $blog_id, $user_id, $domain, $path, $site_id, $met
 }
 
 function ws_create_table_and_settings() {
+	global $wpdb;
 
 	$wpdb->wscategories = ws_db_prefix() . 'wscategories';
 
