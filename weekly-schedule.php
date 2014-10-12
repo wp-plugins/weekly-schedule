@@ -2,10 +2,10 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.8.4
+Version: 2.8.5
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
-Copyright 2012  Yannick Lefebvre  (email : ylefebvre@gmail.com)   
+Copyright 2014  Yannick Lefebvre  (email : ylefebvre@gmail.com)
 
 Contributions to version 2.7 by Daniel R. Baleato 
 
@@ -81,6 +81,39 @@ function ws_db_prefix() {
 
 function ws_install() {
 	global $wpdb;
+
+	if ( function_exists( 'is_multisite' ) && is_multisite() ) {
+		if ( isset( $_GET['networkwide'] ) && ( $_GET['networkwide'] == 1 ) ) {
+			$originalblog = $wpdb->blogid;
+
+			$bloglist = $wpdb->get_col( 'SELECT blog_id FROM ' . $wpdb->blogs );
+			foreach ( $bloglist as $blog ) {
+				switch_to_blog( $blog );
+				ws_create_table_and_settings();
+			}
+			switch_to_blog( $originalblog );
+
+			return;
+		}
+	}
+	ws_create_table_and_settings();
+}
+
+function ws_new_network_site( $blog_id, $user_id, $domain, $path, $site_id, $meta ) {
+	global $wpdb;
+
+	if ( ! function_exists( 'is_plugin_active_for_network' ) )
+		require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+
+	if ( is_plugin_active_for_network( 'weekly-schedule/weekly-schedule.php' ) ) {
+		$originalblog = $wpdb->blogid;
+		switch_to_blog( $blog_id );
+		ws_create_table_and_settings();
+		switch_to_blog( $originalblog );
+	}
+}
+
+function ws_create_table_and_settings() {
 
 	$wpdb->wscategories = ws_db_prefix() . 'wscategories';
 
