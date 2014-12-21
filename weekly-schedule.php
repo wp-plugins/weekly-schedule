@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.8.5
+Version: 2.8.6
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2014  Yannick Lefebvre  (email : ylefebvre@gmail.com)
@@ -256,15 +256,15 @@ function ws_create_table_and_settings() {
 		update_option( 'WS_PP1', $options );
 	}
 
-	$genoptions = get_option( "WeeklyScheduleGeneral" );
+	$genoptions = get_option( 'WeeklyScheduleGeneral' );
 
 	if ( $genoptions == false ) {
-		$genoptions['stylesheet']           = "stylesheet.css";
+		$genoptions['stylesheet']           = 'stylesheettemplate.css';
 		$genoptions['numberschedules']      = 2;
 		$genoptions['debugmode']            = false;
-		$genoptions['includestylescript']   = "";
+		$genoptions['includestylescript']   = '';
 		$genoptions['frontpagestylescript'] = false;
-		$genoptions['version']              = "2.7";
+		$genoptions['version']              = '2.7';
 		$genoptions['accesslevel']          = 'admin';
 
 		$stylesheetlocation           = plugins_url( $genoptions['stylesheet'], __FILE__ );
@@ -402,7 +402,8 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 			global $dlextensions;
 			global $wpdb;
 
-			$adminpage = "";
+			$adminpage = '';
+			$mode = '';
 
 			if ( isset( $_GET['schedule'] ) ) {
 				$schedule = $_GET['schedule'];
@@ -589,7 +590,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 			if ( isset( $_GET['editcat'] ) ) {
 				$adminpage = 'categories';
 
-				$mode = "edit";
+				$mode = 'edit';
 
 				$selectedcat = $wpdb->get_row( "select * from " . ws_db_prefix() . "wscategories where id = " . $_GET['editcat'] );
 			}
@@ -623,7 +624,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 					echo '<div id="message" class="updated fade"><p><strong>Category Updated</strong></div>';
 				}
 
-				$mode = "";
+				$mode = '';
 
 				$adminpage = 'categories';
 			}
@@ -640,7 +641,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 			if ( isset( $_GET['edititem'] ) ) {
 				$adminpage = 'items';
 
-				$mode = "edit";
+				$mode = 'edit';
 
 				$selecteditem = $wpdb->get_row( "select * from " . ws_db_prefix() . "wsitems where id = " . $_GET['edititem'] . " AND scheduleid = " . $_GET['schedule'] );
 			}
@@ -747,7 +748,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 					}
 				}
 
-				$mode = "";
+				$mode = '';
 
 				$adminpage = 'items';
 			}
@@ -1409,17 +1410,17 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 						}
 						?>
 
-						<input type="hidden" name="id" value="<?php if ( $mode == "edit" ) {
+						<input type="hidden" name="id" value="<?php if ( $mode == 'edit' && isset( $selecteditem ) ) {
 							echo $selecteditem->id;
 						} ?>" />
-						<input type="hidden" name="oldrow" value="<?php if ( $mode == "edit" ) {
+						<input type="hidden" name="oldrow" value="<?php if ( $mode == "edit" && isset( $selecteditem ) ) {
 							echo $selecteditem->row;
 						} ?>" />
-						<input type="hidden" name="oldday" value="<?php if ( $mode == "edit" ) {
+						<input type="hidden" name="oldday" value="<?php if ( $mode == "edit"  && isset( $selecteditem ) ) {
 							echo $selecteditem->day;
 						} ?>" />
 						<input type="hidden" name="schedule" value="<?php echo $schedule; ?>" />
-						<?php if ( $mode == "edit" ): ?>
+						<?php if ( $mode == "edit"  && isset( $selecteditem ) ): ?>
 							<strong>Editing Item #<?php echo $selecteditem->id; ?></strong>
 						<?php endif; ?>
 
@@ -1431,7 +1432,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 							?>
 							<tr>
 								<td style='width: 180px'>Item Title</td>
-								<td><input style="width:360px" type="text" name="name" <?php if ( $mode == "edit" ) {
+								<td><input style="width:360px" type="text" name="name" <?php if ( $mode == "edit" && isset( $selecteditem ) ) {
 										echo 'value="' . stripslashes( $selecteditem->name ) . '"';
 									} ?>/></td>
 							</tr>
@@ -1441,7 +1442,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 										<?php $cats = $wpdb->get_results( "SELECT * from " . ws_db_prefix() . "wscategories where scheduleid = " . $schedule . " ORDER by name" );
 
 										foreach ( $cats as $cat ) {
-											if ( $cat->id == $selecteditem->category ) {
+											if ( isset( $selecteditem ) && $cat->id == $selecteditem->category ) {
 												$selectedstring = "selected='selected'";
 											} else {
 												$selectedstring = "";
@@ -1454,13 +1455,13 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 							<tr>
 								<td>Description</td>
 								<td>
-									<textarea id="description" rows="5" cols="45" name="description"><?php if ( $mode == "edit" ) {
+									<textarea id="description" rows="5" cols="45" name="description"><?php if ( $mode == "edit" && isset( $selecteditem ) ) {
 											echo stripslashes( $selecteditem->description );
 										} ?></textarea></td>
 							</tr>
 							<tr>
 								<td>Web Address</td>
-								<td><input style="width:360px" type="text" name="address" <?php if ( $mode == "edit" ) {
+								<td><input style="width:360px" type="text" name="address" <?php if ( $mode == "edit" && isset( $selecteditem ) ) {
 										echo "value='" . $selecteditem->address . "'";
 									} ?>/></td>
 							</tr>
@@ -1471,7 +1472,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 
 										foreach ( $days as $day ) {
 
-											if ( $day->id == $selecteditem->day ) {
+											if ( isset( $selecteditem ) && $day->id == $selecteditem->day ) {
 												$selectedstring = "selected='selected'";
 											} else {
 												$selectedstring = "";
@@ -1516,7 +1517,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 												$minutes = "00";
 											}
 
-											if ( $i == $selecteditem->starttime ) {
+											if ( isset( $selecteditem ) && $i == $selecteditem->starttime ) {
 												$selectedstring = "selected='selected'";
 											} else {
 												$selectedstring = "";
@@ -1546,7 +1547,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 												$minutes = "00";
 											}
 
-											if ( $i == $selecteditem->duration ) {
+											if ( isset( $selecteditem ) && $i == $selecteditem->duration ) {
 												$selectedstring = "selected='selected'";
 											} else {
 												$selectedstring = "";
@@ -1559,14 +1560,14 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 							<tr>
 								<td>Background Cell Color (optional)</td>
 								<td>
-									<input style="width:100px" type="text" name="backgroundcolor" <?php if ( $mode == "edit" ) {
+									<input style="width:100px" type="text" name="backgroundcolor" <?php if ( $mode == "edit" && isset( $selecteditem ) ) {
 										echo "value='" . $selecteditem->backgroundcolor . "'";
 									} ?>/></td>
 							</tr>
 							<tr>
 								<td>Title Color (optional)</td>
 								<td>
-									<input style="width:100px" type="text" name="titlecolor" <?php if ( $mode == "edit" ) {
+									<input style="width:100px" type="text" name="titlecolor" <?php if ( $mode == "edit" && isset( $selecteditem )) {
 										echo "value='" . $selecteditem->titlecolor . "'";
 									} ?>/></td>
 							</tr>
@@ -2492,6 +2493,9 @@ class WSTodayScheduleWidget extends WP_Widget {
 		$schedule_id = ( !empty( $instance['schedule_id'] ) ? $instance['schedule_id'] : 1 );
 		$empty_msg   = ( !empty( $instance['empty_msg'] ) ? $instance['empty_msg'] : 'No Items Found' );
 
+		$schedulename = 'WS_PP' . $schedule_id;
+		$options      = get_option( $schedulename );
+
 		$today = date( 'w', current_time( 'timestamp', 0 ) ) + 1;
 		echo $before_widget;
 		if ( !empty( $title ) ) {
@@ -2514,11 +2518,42 @@ class WSTodayScheduleWidget extends WP_Widget {
 				$item_name  = stripslashes( $schedule_item->name );
 				$start_hour = $schedule_item->starttime;
 
-				if ( strpos( $start_hour, '.' ) > 0 ) {
-					$start_hour = substr( $start_hour, 0, strlen( $start_hour ) - strpos( $start_hour, '.' ) );
-					$start_hour .= ':30';
+				if ( fmod( $schedule_item->starttime, 1 ) == 0.25 ) {
+					$minutes = '15';
+				} elseif ( fmod( $schedule_item->starttime, 1 ) == 0.50 ) {
+					$minutes = '30';
+				} elseif ( fmod( $schedule_item->starttime, 1 ) == 0.75 ) {
+					$minutes = '45';
 				} else {
-					$start_hour .= ":00";
+					$minutes = '';
+				}
+
+				if ( $options['timeformat'] == '24hours' || empty( $options['timeformat'] ) ) {
+					$start_hour = floor( $schedule_item->starttime ) . "h" . $minutes;
+				} else if ( $options['timeformat'] == '24hourscolon' ) {
+					$start_hour = floor( $schedule_item->starttime ) . ":" . ( empty( $minutes ) ? "00" : $minutes );
+				} else if ( $options['timeformat'] == '12hours' ) {
+					if ( $schedule_item->starttime < 12 ) {
+						$timeperiod = 'am';
+						if ( $schedule_item->starttime == 0 ) {
+							$hour = 12;
+						} else {
+							$hour = floor( $schedule_item->starttime );
+						}
+					} else {
+						$timeperiod = 'pm';
+						if ( $schedule_item->starttime >= 12 && $schedule_item->starttime < 13 ) {
+							$hour = floor( $schedule_item->starttime );
+						} else {
+							$hour = floor( $schedule_item->starttime ) - 12;
+						}
+					}
+
+					$start_hour = $hour;
+					if ( !empty( $minutes ) ) {
+						$start_hour .= ":" . $minutes;
+					}
+					$start_hour .= $timeperiod;
 				}
 
 				echo '<li>';
