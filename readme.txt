@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9.2 =
+* Corrected bug with widget option to only show current and future items
+
 = 2.9.1 =
 * Enhanced output to add now-playing css class to currently playing items in schedule and widget views
 * Added row reset to delete all items button

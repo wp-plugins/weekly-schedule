@@ -621,9 +621,6 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 						$filerow += 1;
 
 						if ( $filerow >= 2 ) {
-							//var_dump( $data );
-							//echo 'Field count' . count( $data );
-
 							$start_time = $data[3];
 							$colon_position = strpos( $start_time, ':' );
 
@@ -2675,9 +2672,11 @@ class WSTodayScheduleWidget extends WP_Widget {
 
 		$schedule_query = 'SELECT * from ' . ws_db_prefix() .
 			'wsitems WHERE day = ' . $today .
-			' AND scheduleid = ' . $schedule_id . ' ORDER by starttime ASC LIMIT 0, ' . $max_items;
+			' AND scheduleid = ' . $schedule_id . ' ORDER by starttime ASC';
 
 		$schedule_items = $wpdb->get_results( $schedule_query );
+
+		$itemcount = 0;
 
 		if ( !empty( $schedule_items ) ) {
 			echo '<ul>';
@@ -2685,6 +2684,12 @@ class WSTodayScheduleWidget extends WP_Widget {
 			foreach ( $schedule_items as $schedule_item ) {
 				if ( $only_next_items && ! ( $schedule_item->starttime < $time_now && $time_now < ( $schedule_item->starttime + $schedule_item->duration ) ) && ! ( $schedule_item->starttime > $time_now ) ) {
 					continue;
+				}
+
+				$itemcount++;
+
+				if ( $itemcount > $max_items ) {
+					break;
 				}
 
 				$item_name  = stripslashes( $schedule_item->name );
