@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.8.6
+Version: 2.9
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2014  Yannick Lefebvre  (email : ylefebvre@gmail.com)
@@ -259,18 +259,7 @@ function ws_create_table_and_settings() {
 	$genoptions = get_option( 'WeeklyScheduleGeneral' );
 
 	if ( $genoptions == false ) {
-		$genoptions['stylesheet']           = 'stylesheettemplate.css';
-		$genoptions['numberschedules']      = 2;
-		$genoptions['debugmode']            = false;
-		$genoptions['includestylescript']   = '';
-		$genoptions['frontpagestylescript'] = false;
-		$genoptions['version']              = '2.7';
-		$genoptions['accesslevel']          = 'admin';
-
-		$stylesheetlocation           = plugins_url( $genoptions['stylesheet'], __FILE__ );
-		$genoptions['fullstylesheet'] = file_get_contents( $stylesheetlocation );
-
-		update_option( 'WeeklyScheduleGeneral', $genoptions );
+		ws_reset_gen_options( 'set_and_return' );
 	} elseif ( isset( $genoptions['version'] ) && $genoptions['version'] == '2.0' ) {
 		$genoptions['version'] = '2.3';
 		$wpdb->query( "ALTER TABLE " . ws_db_prefix() . "wsdays CHANGE name name VARCHAR( 64 )  NOT NULL" );
@@ -301,7 +290,26 @@ function ws_create_table_and_settings() {
 
 		$wpdb->query( "ALTER TABLE  `" . ws_db_prefix() . "wsitems` CHANGE `name`  `name` VARCHAR( 255 ) NULL" );
 	}
+}
 
+function ws_reset_gen_options( $setoptions = 'return' ) {
+	$genoptions['stylesheet']           = 'stylesheettemplate.css';
+	$genoptions['numberschedules']      = 2;
+	$genoptions['debugmode']            = false;
+	$genoptions['includestylescript']   = '';
+	$genoptions['frontpagestylescript'] = false;
+	$genoptions['version']              = '2.7';
+	$genoptions['accesslevel']          = 'admin';
+	$genoptions['csvdelimiter']         = ',';
+
+	$stylesheetlocation           = plugins_url( $genoptions['stylesheet'], __FILE__ );
+	$genoptions['fullstylesheet'] = file_get_contents( $stylesheetlocation );
+
+	if ( $setoptions == 'set_and_return' ) {
+		update_option( 'WeeklyScheduleGeneral', $genoptions );
+	}
+
+	return $genoptions;
 }
 
 register_activation_hook( __FILE__, 'ws_install' );
@@ -404,6 +412,12 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 
 			$adminpage = '';
 			$mode = '';
+
+			$genoptions = get_option( 'WeeklyScheduleGeneral' );
+
+			if ( empty( $genoptions ) ) {
+				$genoptions = ws_reset_gen_options( 'set_and_return' );
+			}
 
 			if ( isset( $_GET['schedule'] ) ) {
 				$schedule = $_GET['schedule'];
@@ -571,7 +585,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 				}
 				check_admin_referer( 'wspp-config' );
 
-				foreach ( array( 'stylesheet', 'numberschedules', 'includestylescript', 'accesslevel' ) as $option_name ) {
+				foreach ( array( 'stylesheet', 'numberschedules', 'includestylescript', 'accesslevel', 'csvdelimiter' ) as $option_name ) {
 					if ( isset( $_POST[$option_name] ) ) {
 						$genoptions[$option_name] = $_POST[$option_name];
 					}
@@ -586,7 +600,111 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 				}
 
 				update_option( 'WeeklyScheduleGeneral', $genoptions );
+			} elseif ( isset( $_POST['importschedule'] ) ) {
+				wp_suspend_cache_addition( true );
+				set_time_limit( 600 );
+
+				global $wpdb;
+
+				$handle = fopen( $_FILES['schedulefile']['tmp_name'], 'r' );
+
+				$importmessage = '';
+				$filerow = 0;
+				$successfulimport = 0;
+
+				if ( !isset( $genoptions['csvdelimiter'] ) ) {
+					$genoptions['csvdelimiter'] = ',';
+				}
+
+				if ( $handle ) {
+					while ( ( $data = fgetcsv( $handle, 5000, $genoptions['csvdelimiter'] ) ) !== false ) {
+						$filerow += 1;
+
+						if ( $filerow >= 2 ) {
+							//var_dump( $data );
+							//echo 'Field count' . count( $data );
+
+							$start_time = $data[3];
+							$colon_position = strpos( $start_time, ':' );
+
+							if ( false !== $colon_position ) {
+								$calc_start_time = substr( $start_time, 0, $colon_position );
+								$calc_start_minute = substr( $start_time, $colon_position + 1, 2 );
+								$calc_start_minute = ( round ( $calc_start_minute / 15 ) / 4 );
+								if ( $calc_start_minute >= 1 )
+									$calc_start_minute = 0;
+
+								$start_time = $calc_start_time + $calc_start_minute;
+							} else {
+								$start_time = floatval( $start_time );
+							}
+
+						    if ( count( $data ) > 0 && count( $data ) == 10 ) {
+								$newitem = array(
+									'name'            => esc_html( stripslashes( $data[5] ) ),
+									'description'     => esc_html( stripslashes( $data[6] ) ),
+									'address'         => esc_html( stripslashes( $data[7] ) ),
+									'starttime'       => $start_time,
+									'duration'        => floatval( $data[4] ),
+									'row'             => '',
+									'day'             => intval( $data[2] ),
+									'category'        => intval( $data[1] ),
+									'scheduleid'      => intval( $data[0] ),
+									'backgroundcolor' => esc_html( stripslashes( $data[8] ) ),
+									'titlecolor'      => esc_html( stripslashes( $data[9] ) )
+								);
+
+							    $rowsearch = 1;
+							    $row       = 1;
+
+							    while ( $rowsearch == 1 ) {
+								    $endtime = $newitem['starttime'] + $newitem['duration'];
+
+								    $conflictquery = "SELECT * from " . ws_db_prefix() . "wsitems where day = " . $newitem['day'];
+								    $conflictquery .= " and row = " . $row;
+								    $conflictquery .= " and scheduleid = " . $newitem['scheduleid'];
+								    $conflictquery .= " and ((" . $newitem['starttime'] . " < starttime and " . $endtime . " > starttime) or";
+								    $conflictquery .= "      (" . $newitem['starttime'] . " >= starttime and " . $newitem['starttime'] . " < starttime + duration)) ";
+
+								    $conflictingitems = $wpdb->get_results( $conflictquery );
+
+								    if ( $conflictingitems ) {
+									    $row ++;
+								    } else {
+									    $rowsearch = 0;
+								    }
+							    }
+
+							    $dayrow = $wpdb->get_row( "SELECT * from " . ws_db_prefix() . "wsdays where id = " . $newitem['day'] . " AND scheduleid = " . $newitem['scheduleid'] );
+							    if ( $dayrow->rows < $row ) {
+								    $dayid     = array( 'id' => $newitem['day'], 'scheduleid' => $newitem['scheduleid'] );
+								    $newdayrow = array( 'rows' => $row );
+
+								    $wpdb->update( ws_db_prefix() . 'wsdays', $newdayrow, $dayid );
+							    }
+
+							    $newitem['row'] = $row;
+
+							    $wpdb->insert( ws_db_prefix() . 'wsitems', $newitem );
+								$successfulimport++;
+							} elseif ( count( $data ) > 0 && count( $data ) != 10 ) {
+								$importmessage = 1;
+							}
+						}
+					}
+				}
+
+				if ( $successfulimport > 0 ) {
+					echo '<div id="message" class="updated fade"><p><strong>Successfully imported ' . $successfulimport . ' record(s) from ' . ( $filerow - 1 ) . ' line(s) in import file</strong></div>';
+				}
+
+				if ( $importmessage == 1 ) {
+					echo '<div id="message" class="updated fade"><p><strong>Some records did not have the right number of fields</strong></div>';
+				}
+
+				wp_suspend_cache_addition( false );
 			}
+
 			if ( isset( $_GET['editcat'] ) ) {
 				$adminpage = 'categories';
 
@@ -793,6 +911,10 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 					$wpdb->update( ws_db_prefix() . 'wsdays', $daynamearray, $dayidarray );
 				}
 			}
+			if ( isset( $_POST['deleteallitems'] ) && isset( $_GET['schedule'] ) ) {
+				$deletion_query = 'delete from ' . ws_db_prefix() . 'wsitems where scheduleid = ' . $_GET['schedule'];
+				$wpdb->get_results( $deletion_query );
+			}
 
 			$wspluginpath = WP_CONTENT_URL . '/plugins/' . plugin_basename( dirname( __FILE__ ) ) . '/';
 
@@ -856,20 +978,6 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 				}
 			}
 
-			$genoptions = get_option( 'WeeklyScheduleGeneral' );
-
-			if ( $genoptions == "" ) {
-				$genoptions['stylesheet']           = '';
-				$genoptions['numberschedules']      = 2;
-				$genoptions['debugmode']            = false;
-				$genoptions['includestylescript']   = '';
-				$genoptions['frontpagestylescript'] = false;
-				$genoptions['includescriptcss']     = '';
-				$genoptions['version']              = "2.4";
-
-				update_option( 'WeeklyScheduleGeneral', $genoptions );
-			}
-
 			?>
 			<div class="wrap">
 			<h2>Weekly Schedule Configuration</h2>
@@ -878,7 +986,8 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 			<a href='http://wordpress.org/extend/plugins/weekly-schedule/faq/' target='llfaq'>FAQ</a> |
 			<a href='http://yannickcorner.nayanna.biz/contact-me'>Contact the Author</a><br /><br />
 
-			<form name='wsadmingenform' action="<?php echo add_query_arg( 'page', 'weekly-schedule', admin_url( 'options-general.php' ) ); ?>" method="post" id="ws-conf">
+			<form name='wsadmingenform' action="<?php echo add_query_arg( 'page', 'weekly-schedule', admin_url( 'options-general.php' ) ); ?>" method="post" id="ws-conf" enctype="multipart/form-data">
+				<input type="hidden" name="MAX_FILE_SIZE" value="1000000" />
 				<?php
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					wp_nonce_field( 'wspp-config' );
@@ -893,6 +1002,16 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 						<tr>
 							<td style='padding: 8px; vertical-align: top'>
 								<table>
+									<tr>
+										<td>Import Schedule Items (<a href="<?php echo plugins_url( 'importtemplate.csv', __FILE__ ); ?>">Template</a>)</td>
+										<td><input size="80" name="schedulefile" type="file" /></td>
+										<td><input type="submit" name="importschedule" value="Import Items" /></td>
+									</tr>
+									<tr>
+										<td>Import File Delimiter</td>
+										<td>
+											<input type="text" id="csvdelimiter" name="csvdelimiter" size="1" value="<?php if ( !isset( $genoptions['csvdelimiter'] ) ) $genoptions['csvdelimiter'] = ','; echo $genoptions['csvdelimiter']; ?>" /></td>
+									</tr>
 									<tr>
 										<td style='width:200px'>Stylesheet File Name</td>
 										<td>
@@ -1582,12 +1701,22 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 					</form>
 				</div>
 				<div>
-					<?php $items = $wpdb->get_results(
-						"SELECT d.name as dayname, i.id, i.name, i.backgroundcolor, i.day, i.starttime FROM " . ws_db_prefix() . "wsitems as i, " . ws_db_prefix() . "wsdays as d WHERE i.day = d.id 
-								and i.scheduleid = " . $schedule . " and d.scheduleid = " . $_GET['schedule'] . " ORDER by day, starttime, name"
-					);
+					<?php
+					$itemquery = "SELECT d.name as dayname, i.id, i.name, i.backgroundcolor, i.day, i.starttime FROM " . ws_db_prefix() . "wsitems as i, " . ws_db_prefix() . "wsdays as d WHERE i.day = d.id
+								and i.scheduleid = " . $schedule . " and d.scheduleid = " . $_GET['schedule'] . " ORDER by d.id, starttime, name";
+					$items = $wpdb->get_results( $itemquery );
 
 					if ( $items ): ?>
+						<form name="wsitemdeletionform" action="?page=weekly-schedule&settings=items&schedule=<?php echo $schedule; ?>" method="post" id="ws-config">
+							<?php
+							if ( function_exists( 'wp_nonce_field' ) ) {
+								wp_nonce_field( 'wspp-config' );
+							}
+							?>
+
+							<input class="button" type="submit" name="deleteallitems" value="Delete all items in Schedule <?php echo $schedule; ?>" onclick="return confirm('Are you sure you want to delete all items in Schedule <?php echo $schedule; ?>?')" />
+						</form>
+						<br />
 						<table class='widefat' style='clear:none;width:500px;background: #DFDFDF url(/wp-admin/images/gray-grad.png) repeat-x scroll left top;'>
 							<thead>
 							<tr>
@@ -1663,6 +1792,8 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 
 							</tbody>
 						</table>
+					<?php else: ?>
+						<p>No items to display</p>
 					<?php endif; ?>
 				</div>
 			<?php

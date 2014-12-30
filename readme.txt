@@ -26,6 +26,10 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9 =
+* Added new importer to be able to batch import schedule items
+* Added new button to delete all items in a schedule
+
 = 2.8.6 =
 * Modified widget to respect 12/24 hour display setting from schedule definition
 * Removed PHP warnings
