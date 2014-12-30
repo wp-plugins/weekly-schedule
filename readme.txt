@@ -26,6 +26,11 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9.1 =
+* Enhanced output to add now-playing css class to currently playing items in schedule and widget views
+* Added row reset to delete all items button
+* Added new option in widget only to show items that are playing or still to play on current day
+
 = 2.9 =
 * Added new importer to be able to batch import schedule items
 * Added new button to delete all items in a schedule

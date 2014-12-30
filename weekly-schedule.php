@@ -2,10 +2,10 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.9
+Version: 2.9.1
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
-Copyright 2014  Yannick Lefebvre  (email : ylefebvre@gmail.com)
+Copyright 2015  Yannick Lefebvre  (email : ylefebvre@gmail.com)
 
 Contributions to version 2.7 by Daniel R. Baleato 
 
@@ -914,6 +914,9 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 			if ( isset( $_POST['deleteallitems'] ) && isset( $_GET['schedule'] ) ) {
 				$deletion_query = 'delete from ' . ws_db_prefix() . 'wsitems where scheduleid = ' . $_GET['schedule'];
 				$wpdb->get_results( $deletion_query );
+
+				$days_row_query = 'update ' . ws_db_prefix() . 'wsdays set rows = 1 where scheduleid = ' . $_GET['schedule'];
+				$wpdb->get_results( $days_row_query);
 			}
 
 			$wspluginpath = WP_CONTENT_URL . '/plugins/' . plugin_basename( dirname( __FILE__ ) ) . '/';
@@ -1920,6 +1923,11 @@ function ws_library(
 ) {
 	global $wpdb;
 
+	$today = date( 'w', current_time( 'timestamp', 0 ) ) + 1;
+	$system_hour = date( 'H', current_time( 'timestamp', 0 ) );
+	$system_minute = date( 'i', current_time( 'timestamp', 0 ) ) / 60;
+	$time_now = $system_hour + $system_minute;
+
 	$numberofcols = ( $endtime - $starttime ) / $timedivision;
 
 	$output = "<!-- Weekly Schedule Output -->\n";
@@ -2058,7 +2066,7 @@ function ws_library(
 				$output .= "</tr>\n";
 			}
 
-			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid, i.backgroundcolor as itemcolor, c.backgroundcolor as categorycolor from " . ws_db_prefix() .
+			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid, i.backgroundcolor as itemcolor, c.backgroundcolor as categorycolor, i.day as dayid from " . ws_db_prefix() .
 				"wsitems i, " . ws_db_prefix() . "wscategories c WHERE day = " . $day->id .
 				" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
 				$endtime . " ORDER by starttime";
@@ -2067,6 +2075,7 @@ function ws_library(
 
 			if ( $items ) {
 				foreach ( $items as $item ) {
+
 					for ( $i = $time; $i < $item->starttime; $i += $timedivision ) {
 						if ( $layout == 'vertical' ) {
 							$output .= "<tr class='datarow'>\n";
@@ -2102,7 +2111,13 @@ function ws_library(
 						$output .= "<tr class='datarow" . $colspan . "'>";
 					}
 
-					$output .= '<td class=ws-item-' . $item->id . ' ';
+					$output .= '<td class="';
+
+					if ( $item->starttime < $time_now && $time_now < ( $item->starttime + $item->duration ) && $today == $item->dayid ) {
+						$output .= 'now-playing ';
+					}
+
+					$output .= 'ws-item-' . $item->id . '" ';
 
 					if ( !empty( $item->itemcolor ) || !empty( $item->categorycolor ) ) {
 
@@ -2121,7 +2136,13 @@ function ws_library(
 
 					$output .= "class='cat" . $item->catid . "'>";
 
-					$output .= '<div class="ws-item-title ws-item-title-' . $item->id . '"';
+					$output .= '<div class="';
+
+					if ( $item->starttime < $time_now && $time_now < ( $item->starttime + $item->duration ) && $today == $item->dayid ) {
+						$output .= 'now-playing ';
+					}
+
+					$output .= 'ws-item-title ws-item-title-' . $item->id . '"';
 
 					if ( !empty( $item->titlecolor ) ) {
 						$output .= ' style="color:' . $item->titlecolor . '"';
@@ -2240,7 +2261,12 @@ function ws_library_flat(
 ) {
 	global $wpdb;
 
-	$linktarget = "newwindow";
+	$today = date( 'w', current_time( 'timestamp', 0 ) ) + 1;
+	$system_hour = date( 'H', current_time( 'timestamp', 0 ) );
+	$system_minute = date( 'i', current_time( 'timestamp', 0 ) ) / 60;
+	$time_now = $system_hour + $system_minute;
+
+	$linktarget = 'newwindow';
 
 	$output = "<!-- Weekly Schedule Flat Output -->\n";
 
@@ -2260,7 +2286,7 @@ function ws_library_flat(
 		for ( $daysrow = 1; $daysrow <= $day->rows; $daysrow ++ ) {
 			$output .= "<tr><td colspan='3'>" . $day->name . "</td></tr>\n";
 
-			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid from " . ws_db_prefix() .
+			$sqlitems = "SELECT *, i.name as itemname, c.name as categoryname, c.id as catid, i.day as dayid from " . ws_db_prefix() .
 				"wsitems i, " . ws_db_prefix() . "wscategories c WHERE day = " . $day->id .
 				" AND i.scheduleid = " . $scheduleid . " AND row = " . $daysrow . " AND i.category = c.id AND i.starttime >= " . $starttime . " AND i.starttime < " .
 				$endtime . " ORDER by starttime";
@@ -2342,15 +2368,21 @@ function ws_library_flat(
 						$minutes = "00";
 					}
 
-					if ( $options['timeformat'] == '24hours' ) {
+					if ( $timeformat == '24hours' ) {
 						$output .= $hour . "h" . $minutes . "</td>";
-					} elseif ( $options['timeformat'] == '24hourscolon' ) {
+					} elseif ( $timeformat == '24hourscolon' ) {
 						$output .= $hour . ":" . $minutes . "</td>";
-					} elseif ( $options['timeformat'] == '12hours' ) {
+					} elseif ( $timeformat == '12hours' ) {
 						$output .= $hour . ":" . $minutes . $timeperiod . "</td>";
 					}
 
-					$output .= "<td>\n";
+					$output .= "<td";
+
+					if ( $item->starttime < $time_now && $time_now < ( $item->starttime + $item->duration ) && $today == $item->dayid ) {
+						$output .= ' class="now-playing"';
+					}
+
+					$output .= ">\n";
 
 					if ( $item->address != "" ) {
 						$output .= "<a target='" . $linktarget . "'href='" . $item->address . "'>";
@@ -2623,11 +2655,16 @@ class WSTodayScheduleWidget extends WP_Widget {
 		$max_items   = ( !empty( $instance['max_items'] ) ? $instance['max_items'] : 5 );
 		$schedule_id = ( !empty( $instance['schedule_id'] ) ? $instance['schedule_id'] : 1 );
 		$empty_msg   = ( !empty( $instance['empty_msg'] ) ? $instance['empty_msg'] : 'No Items Found' );
+		$only_next_items   = ( !empty( $instance['only_next_items'] ) ? $instance['only_next_items'] : false );
 
 		$schedulename = 'WS_PP' . $schedule_id;
 		$options      = get_option( $schedulename );
 
 		$today = date( 'w', current_time( 'timestamp', 0 ) ) + 1;
+		$system_hour = date( 'H', current_time( 'timestamp', 0 ) );
+		$system_minute = date( 'i', current_time( 'timestamp', 0 ) ) / 60;
+		$time_now = $system_hour + $system_minute;
+
 		echo $before_widget;
 		if ( !empty( $title ) ) {
 			echo $before_title . $title . $after_title;
@@ -2646,6 +2683,10 @@ class WSTodayScheduleWidget extends WP_Widget {
 			echo '<ul>';
 
 			foreach ( $schedule_items as $schedule_item ) {
+				if ( $only_next_items && ! ( $schedule_item->starttime < $time_now && $time_now < ( $schedule_item->starttime + $schedule_item->duration ) ) && ! ( $schedule_item->starttime > $time_now ) ) {
+					continue;
+				}
+
 				$item_name  = stripslashes( $schedule_item->name );
 				$start_hour = $schedule_item->starttime;
 
@@ -2687,7 +2728,13 @@ class WSTodayScheduleWidget extends WP_Widget {
 					$start_hour .= $timeperiod;
 				}
 
-				echo '<li>';
+				echo '<li';
+
+				if ( $schedule_item->starttime < $time_now && $time_now < ( $schedule_item->starttime + $schedule_item->duration ) && $today == $schedule_item->day ) {
+					echo ' class="now-playing"';
+				}
+
+				echo '>';
 				if ( !empty( $schedule_item->address ) ) {
 					echo '<a href="' . $schedule_item->address . '">';
 				}
@@ -2728,6 +2775,12 @@ class WSTodayScheduleWidget extends WP_Widget {
 			$instance['schedule_id'] = $instance['schedule_id'];
 		}
 
+		if ( isset( $new_instance['only_next_items'] ) ) {
+			$instance['only_next_items'] = true;
+		} else {
+			$instance['only_next_items'] = false;
+		}
+
 		$instance['empty_msg'] = strip_tags( $new_instance['empty_msg'] );
 
 		return $instance;
@@ -2746,6 +2799,7 @@ class WSTodayScheduleWidget extends WP_Widget {
 		$max_items   = ( !empty( $instance['max_items'] ) ? $instance['max_items'] : 5 );
 		$schedule_id = ( !empty( $instance['schedule_id'] ) ? $instance['schedule_id'] : 1 );
 		$empty_msg   = ( !empty( $instance['empty_msg'] ) ? $instance['empty_msg'] : 'No Items Found' );
+		$only_next_items   = ( !empty( $instance['only_next_items'] ) ? $instance['only_next_items'] : false );
 
 		$genoptions = get_option( 'WeeklyScheduleGeneral' );
 		?>
@@ -2764,6 +2818,11 @@ class WSTodayScheduleWidget extends WP_Widget {
 			<label for="<?php echo $this->get_field_id( 'max_items' ); ?>">Max Number of Items:</label>
 			<input class="widefat" id="<?php echo $this->get_field_id( 'max_items' ); ?>" name="<?php echo $this->get_field_name( 'max_items' ); ?>" type="text" value="<?php echo esc_attr( $max_items ); ?>" />
 			<span class='description'><?php __( 'Maximum number of items to display' ); ?></span>
+		</p>
+
+		<p>
+			<label for="<?php echo $this->get_field_id( 'max_items' ); ?>">Only show current and later items</label>
+			<input type="checkbox" id="<?php echo $this->get_field_id( 'only_next_items' ); ?>" name="<?php echo $this->get_field_name( 'only_next_items' ); ?>" <?php checked( $only_next_items ); ?> />
 		</p>
 
 		<p>
