@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9.3 =
+* Updated version of qtip plugin used to diplay schedule item tooltips
+
 = 2.9.2 =
 * Corrected bug with widget option to only show current and future items
 

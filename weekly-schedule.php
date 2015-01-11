@@ -2,25 +2,25 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.9.2
+Version: 2.9.3
 Author: Yannick Lefebvre
-Author URI: http://yannickcorner.nayanna.biz   
+Author URI: http://yannickcorner.nayanna.biz
 Copyright 2015  Yannick Lefebvre  (email : ylefebvre@gmail.com)
 
-Contributions to version 2.7 by Daniel R. Baleato 
+Contributions to version 2.7 by Daniel R. Baleato
 
-This program is free software; you can redistribute it and/or modify   
-it under the terms of the GNU General Public License as published by    
-the Free Software Foundation; either version 2 of the License, or    
-(at your option) any later version.    
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,    
-but WITHOUT ANY WARRANTY; without even the implied warranty of    
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the    
-GNU General Public License for more details.    
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License    
-along with this program; if not, write to the Free Software    
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA*/
 
 $ws_pagehooktop          = "";
@@ -269,7 +269,7 @@ function ws_create_table_and_settings() {
 		update_option( 'WeeklyScheduleGeneral', $genoptions );
 
 		for ( $counter = 1; $counter <= $genoptions['numberschedules']; $counter += 1 ) {
-			$colors    = array( 'cream' => 'ui-tooltip', 'dark' => 'ui-tooltip-dark', 'green' => 'ui-tooltip-green', 'light' => 'ui-tooltip-light', 'red' => 'ui-tooltip-red', 'blue' => 'ui-tooltip-blue' );
+			$colors    = array( 'cream' => 'qtip-cream', 'dark' => 'qtip-dark', 'green' => 'qtip-green', 'light' => 'qtip-light', 'red' => 'qtip-red', 'blue' => 'qtip-blue' );
 			$positions = array( 'topLeft' => 'top left', 'topMiddle' => 'top center', 'topRight' => 'top right', 'rightTop' => 'right top', 'rightMiddle' => 'right center', 'rightBottom' => 'right bottom', 'bottomLeft' => 'bottom left', 'bottomMiddle' => 'bottom center', 'bottomRight' => 'bottom right', 'leftTop' => 'left top', 'leftMiddle' => 'left center', 'leftBottom' => 'left bottom' );
 
 			$schedulename = 'WS_PP' . $counter;
@@ -955,7 +955,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 				$catsresult = $wpdb->query( "SELECT * from " . ws_db_prefix() . "wscategories where scheduleid = " . $schedule );
 
 				if ( !$catsresult ) {
-					$sqlstatement = "INSERT INTO " . ws_db_prefix() . "wscategories (`name`, `scheduleid`) VALUES 
+					$sqlstatement = "INSERT INTO " . ws_db_prefix() . "wscategories (`name`, `scheduleid`) VALUES
 									('Default', " . $schedule . ")";
 					$result       = $wpdb->query( $sqlstatement );
 				}
@@ -1353,7 +1353,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 				<tr>
 					<td>Tooltip Color Scheme</td>
 					<td><select name='tooltipcolorscheme' style='width: 100px'>
-							<?php $colors = array( 'ui-tooltip' => 'cream', 'ui-tooltip-dark' => 'dark', 'ui-tooltip-green' => 'green', 'ui-tooltip-light' => 'light', 'ui-tooltip-red' => 'red', 'ui-tooltip-blue' => 'blue' );
+							<?php $colors = array( 'qtip-cream' => 'cream', 'qtip-dark' => 'dark', 'qtip-green' => 'green', 'qtip-light' => 'light', 'qtip-red' => 'red', 'qtip-blue' => 'blue' );
 							foreach ( $colors as $key => $color ) {
 								if ( $key == $options['tooltipcolorscheme'] ) {
 									$samecolor = "selected='selected'";
