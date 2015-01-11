@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://yannickcorner.nayanna.biz/wordpress-plugins/
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.9.1
+Version: 2.9.2
 Author: Yannick Lefebvre
 Author URI: http://yannickcorner.nayanna.biz   
 Copyright 2015  Yannick Lefebvre  (email : ylefebvre@gmail.com)
@@ -227,7 +227,6 @@ function ws_create_table_and_settings() {
 			$genoptions['debugmode']            = false;
 			$genoptions['includestylescript']   = $upgradeoptions['includestylescript'];
 			$genoptions['frontpagestylescript'] = false;
-			$genoptions['includescriptcss']     = '';
 			$genoptions['version']              = "2.0";
 			$genoptions['accesslevel']          = 'admin';
 
@@ -2540,8 +2539,8 @@ function ws_conditional_header( $posts ) {
 		}
 	}
 
-	if ( isset( $genoptions['includescriptcss'] ) && !empty( $genoptions['includescriptcss'] ) ) {
-		$pagelist = explode( ',', $genoptions['includescriptcss'] );
+	if ( isset( $genoptions['includestylescript'] ) && !empty( $genoptions['includestylescript'] ) ) {
+		$pagelist = explode( ',', $genoptions['includestylescript'] );
 		foreach ( $pagelist as $pageid ) {
 			if ( is_page( $pageid ) ) {
 				$load_jquery = true;
@@ -2556,8 +2555,9 @@ function ws_conditional_header( $posts ) {
 	}
 
 	if ( $load_qtip ) {
-		wp_enqueue_style( 'qtipstyle', get_bloginfo( 'wpurl' ) . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-2.0.min.css' );
-		wp_enqueue_script( 'qtip', get_bloginfo( 'wpurl' ) . '/wp-content/plugins/weekly-schedule/jquery-qtip/jquery.qtip-2.0.min.js' );
+		wp_enqueue_style( 'qtipstyle', plugins_url( 'jquery-qtip/jquery.qtip.min.css', __FILE__ ) );
+		wp_enqueue_script( 'qtip', plugins_url( 'jquery-qtip/jquery.qtip.min.js', __FILE__ ) );
+		wp_enqueue_script( 'imagesloaded', plugins_url( 'jquery-qtip/imagesloaded.pkg.min.js', __FILE__ ), 'qtip' );
 	}
 
 	return $posts;
