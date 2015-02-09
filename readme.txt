@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9.4 =
+* Added uninstall routine to remove all options and tables related to Weekly Schedule
+
 = 2.9.3 =
 * Updated version of qtip plugin used to diplay schedule item tooltips
 
