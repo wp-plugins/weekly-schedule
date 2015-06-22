@@ -1,6 +1,6 @@
 === Weekly Schedule ===
 Contributors: jackdewey
-Donate link: http://yannickcorner.nayanna.biz/wordpress-plugins/weekly-schedule/
+Donate link: http://ylefebvre.ca/wordpress-plugins/weekly-schedule/
 Tags: schedule, events, grid, weekly, multiple, tooltip, jQuery
 Requires at least: 2.8
 Tested up to: 4.2
@@ -12,7 +12,7 @@ The purpose of this plugin is to allow users to create a schedule of weekly even
 
 The purpose of this plugin is to allow users to create one or more schedules of weekly events and display these schedule on one or more pages as tables. Users can style their schedules using stylesheets based on the category of items and can assign information to items that will be displayed in a tooltip.
 
-You can see a demonstration of the output of the plugin using a single schedule [here](http://yannickcorner.nayanna.biz/2009-2010-tv-schedule/).
+You can see a demonstration of the output of the plugin using a single schedule [here](http://ylefebvre.ca/2009-2010-tv-schedule/).
 
 == Installation ==
 
