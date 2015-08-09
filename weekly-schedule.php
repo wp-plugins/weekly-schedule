@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://ylefebvre.ca/wordpress-plugins/weekly-schedule
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.9.5
+Version: 2.9.6
 Author: Yannick Lefebvre
 Author URI: http://ylefebvre.ca
 Copyright 2015  Yannick Lefebvre  (email : ylefebvre@gmail.com)
@@ -620,6 +620,7 @@ if ( is_admin() && !class_exists( 'WS_Admin' ) ) {
 						$filerow += 1;
 
 						if ( $filerow >= 2 ) {
+							var_dump( $data );
 							$start_time = $data[3];
 							$colon_position = strpos( $start_time, ':' );
 
@@ -2033,13 +2034,19 @@ function ws_library(
 		for ( $daysrow = 1; $daysrow <= $day->rows; $daysrow ++ ) {
 			$columns = $numberofcols;
 			$time    = $starttime;
+			$firstrowofday = 0;
 
 			if ( $layout == 'vertical' ) {
 				$output .= "<div class='verticalcolumn" . $day->rows . "'>\n";
 				$output .= "<table class='vertical" . $day->rows . "'>\n";
 				$output .= "<tr class='vertrow" . $day->rows . "'>";
 			} elseif ( $layout == 'horizontal' || $layout == '' ) {
-				$output .= "<tr class='row" . $day->rows . "'>\n";
+				$output .= "<tr class='row" . $day->rows . " ";
+				if ( !$firstrowofday ) {
+					$output .= "firstrowofday";
+					$firstrowofday = 1;
+				}
+				$output .= "'>\n";
 			}
 
 			if ( $daysrow == 1 && ( $layout == 'horizontal' || $layout == '' ) ) {

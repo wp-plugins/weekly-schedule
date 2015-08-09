@@ -26,6 +26,9 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9.6 =
+* Small class addition to horizontal mode for styling
+
 = 2.9.5 =
 * Fixed problem with category class on table data items
 
