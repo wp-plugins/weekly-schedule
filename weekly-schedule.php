@@ -2,7 +2,7 @@
 /*Plugin Name: Weekly Schedule
 Plugin URI: http://ylefebvre.ca/wordpress-plugins/weekly-schedule
 Description: A plugin used to create a page with a list of TV shows
-Version: 2.9.6
+Version: 2.9.8
 Author: Yannick Lefebvre
 Author URI: http://ylefebvre.ca
 Copyright 2015  Yannick Lefebvre  (email : ylefebvre@gmail.com)

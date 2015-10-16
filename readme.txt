@@ -26,6 +26,12 @@ You can see a demonstration of the output of the plugin using a single schedule 
 
 == Changelog ==
 
+= 2.9.8 =
+* Reverting changes from 2.9.7. Will bring back down the road.
+
+= 2.9.7 =
+* Update way in which qtip library is loaded to be more friendly to do_shortcode function call
+
 = 2.9.6 =
 * Small class addition to horizontal mode for styling
 
